@@ -1,3 +1,5 @@
+import { getPropFromObject } from './helpers';
+
 //@TODO put these constants in a separate file that can be shared with ORM, or just put them on ORM
 const BELONGS_TO = 'belongsTo';
 const HAS_MANY = 'hasMany';
@@ -55,8 +57,24 @@ export default class DataModelBase {
 		const knex = this.constructor.ORM.knex;
 		const def = this.constructor.model_definition;
 		const inserting = !this._id();
+		const attributeKeys = Object.keys(def.attributes);
+
+		//assert required flag and attribute level validation
+		for (let i = 0; i < attributeKeys.length; i++) {
+			let thisKey = attributeKeys[i];
+			let isRequired = getPropFromObject('required', def.attributes[thisKey]);
+			let validate = getPropFromObject('validate', def.attributes[thisKey]);
+			if (isRequired && !this[thisKey]) {
+				return Promise.reject(new Error(`Missing required attribute [${thisKey}]`));
+			}
+			if (typeof validate === 'function' && ! await validate(this[thisKey])) {
+				return Promise.reject(new Error(`[${thisKey}] failed validation`));
+			}
+		}
+
+		//get values for save
 		let values = {};
-		Object.keys(def.attributes).map(attr => {
+		attributeKeys.map(attr => {
 			if (attr != this._pk()) {
 				values[attr] = this[attr];
 			}
@@ -68,7 +86,7 @@ export default class DataModelBase {
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
 			if (inserting) this[this._pk()] = result[0];
 			let savedRow = await this.constructor.get(this._id());
-			for(let i = 0; i < Object.keys(def.attributes).length; i++) {
+			for(let i = 0; i < attributeKeys.length; i++) {
 				this[Object.keys(def.attributes)[i]] = savedRow[Object.keys(def.attributes)[i]];
 			}
 			return Promise.resolve(true);
@@ -108,7 +126,7 @@ export default class DataModelBase {
 	static findOne() {
 		const knex = this.ORM.knex;
 		const def = this.model_definition;
-		return knex.select().column(this.getTableColumns()).from(def.table).queryContext({
+		return knex.select().limit(1).column(this.getTableColumns()).from(def.table).queryContext({
 			ormtransform: rowsToObjects(def, this),
 			returnSingleObject: true,
 		});
@@ -309,7 +327,8 @@ function rowsToObjects(model_definition, classConstructor) {
 			const object = new classConstructor();
 			Object.keys(model_definition.attributes).map(attr => {
 				if (typeof result[attr] !== 'undefined') {
-					object[attr] = result[attr];
+					const transform = getPropFromObject('transform', model_definition.attributes[attr]);
+					object[attr] = typeof transform === 'function' ? transform(result[attr]) :  result[attr];
 				}
 			});
 			grouped[object[classConstructor._pk()]] = object;
