@@ -16,11 +16,15 @@ const trans = data => {
 }
 
 class PetOwner extends ORM.Model {
+	constructor() {
+		super();
+		this.aTestProperty = "this is a test";
+	}
 	static get model_definition() {
 		return {
 			table: "pet_owner",
 			attributes: {
-				id: {},
+				id: null,
 				name: {
 					transform: trans,
 					required: true
@@ -34,6 +38,10 @@ class PetOwner extends ORM.Model {
 			}
 		}
 	};
+
+	transform() {
+		this.name = "this is a test transform";
+	}
 }
 
 class Cat extends ORM.Model {
@@ -77,9 +85,9 @@ ORM.register([PetOwner, Cat, CatToy]);
 
 async function performTest() {
 	let owner = new PetOwner();
-	owner.name = "A name";
+	owner.name = "test name";
 	await owner.save();
-	console.log('the owner', owner);
+	console.log(owner);
 }
 
 async function runTest() {

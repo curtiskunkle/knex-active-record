@@ -1,4 +1,4 @@
-import { getPropFromObject } from './helpers';
+import { getPropFromObject, isObject } from './helpers';
 
 //@TODO put these constants in a separate file that can be shared with ORM, or just put them on ORM
 const BELONGS_TO = 'belongsTo';
@@ -65,11 +65,16 @@ export default class DataModelBase {
 			let isRequired = getPropFromObject('required', def.attributes[thisKey]);
 			let validate = getPropFromObject('validate', def.attributes[thisKey]);
 			if (isRequired && !this[thisKey]) {
-				return Promise.reject(new Error(`Missing required attribute [${thisKey}]`));
+				return Promise.reject(new Error(`${this.constructor.name} missing required attribute [${thisKey}]`));
 			}
 			if (typeof validate === 'function' && ! await validate(this[thisKey])) {
-				return Promise.reject(new Error(`[${thisKey}] failed validation`));
+				return Promise.reject(new Error(`${this.constructor.name} [${thisKey}] attribute failed validation`));
 			}
+		}
+
+		//assert instance level validation
+		if (!(await this.validate())) {
+			return Promise.reject(new Error(`${this.constructor.name} failed validation`));
 		}
 
 		//get values for save
@@ -85,15 +90,34 @@ export default class DataModelBase {
 		try {
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
 			if (inserting) this[this._pk()] = result[0];
-			let savedRow = await this.constructor.get(this._id());
+			let savedObject = await this.constructor.get(this._id());
 			for(let i = 0; i < attributeKeys.length; i++) {
-				this[Object.keys(def.attributes)[i]] = savedRow[Object.keys(def.attributes)[i]];
+				this[Object.keys(def.attributes)[i]] = savedObject[Object.keys(def.attributes)[i]];
 			}
 			return Promise.resolve(true);
 		} catch(err) {
 			return Promise.reject(err);
 		}
 	};
+
+	/**
+	 * Override to apply instance level validation function when saving
+	 */
+	validate() {
+		return true;
+	}
+
+	/**
+	 * Called after object is constructed from query response in find functions
+	 * Override this function to apply instance level transform
+	 *
+	 * Note: Adding properties to the object here is not recommended as they will not be present on the
+	 * object after it is saved - only after a find() function is called.  Instead, this should really only
+	 * be used for transforming attributes that exist in the model definition.
+	 */
+	transform() {
+		return true;
+	}
 
 	/**
 	 * Delete this instance
@@ -115,7 +139,7 @@ export default class DataModelBase {
 		const knex = this.ORM.knex;
 		const def = this.model_definition;
 		return knex.select().column(this.getTableColumns()).from(def.table).queryContext({
-			ormtransform: rowsToObjects(def, this)
+			ormtransform: transformQueryResults(def, this)
 		});
 	}
 
@@ -127,7 +151,7 @@ export default class DataModelBase {
 		const knex = this.ORM.knex;
 		const def = this.model_definition;
 		return knex.select().limit(1).column(this.getTableColumns()).from(def.table).queryContext({
-			ormtransform: rowsToObjects(def, this),
+			ormtransform: transformQueryResults(def, this),
 			returnSingleObject: true,
 		});
 	}
@@ -177,10 +201,10 @@ export default class DataModelBase {
 		let that = this;
 		let relationTypes = [HAS_MANY, BELONGS_TO, HAS_ONE, HAS_MANY_THROUGH];
 		relationTypes.map(relType => {
-			if (typeof def[relType] === 'object') {
+			if (isObject(def[relType])) {
 				Object.keys(def[relType]).map(relationName => {
 					let config = def[relType][relationName];
-					if (typeof config  === 'object') {
+					if (isObject(config)) {
 						if (relType === HAS_MANY_THROUGH && config.through && config.relationship) {
 							that[relationName] = () => {
 								return that._doRelation(relationName, relType,  () => {
@@ -298,6 +322,7 @@ export default class DataModelBase {
 		}
 	}
 
+	//@TODO is this how this should work?  Could easily be overridden if console output is not the desired behavior
 	static debug(message) {
 		console.log(message);
 	}
@@ -316,11 +341,15 @@ function relationDefault(type) {
 
 /**
  * Turn result rows into model instances
+ *
+ * Maps results of query to model instance properties
+ * Also applies attribute level and instance level transform functions (in that order)
+ *
  * @param  object   model_definition
  * @param  function classConstructor
  * @return array of instances
  */
-function rowsToObjects(model_definition, classConstructor) {
+function transformQueryResults(model_definition, classConstructor) {
 	return results => {
 		let grouped = {};
 		results.map(result => {
@@ -331,6 +360,7 @@ function rowsToObjects(model_definition, classConstructor) {
 					object[attr] = typeof transform === 'function' ? transform(result[attr]) :  result[attr];
 				}
 			});
+			object.transform();
 			grouped[object[classConstructor._pk()]] = object;
 		});
 		return Object.values(grouped);
@@ -340,7 +370,7 @@ function rowsToObjects(model_definition, classConstructor) {
 function findRelationshipInModelDefinition(model_definition, relationship) {
 	const relTypes = [BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH];
 	for(let i = 0; i < relTypes.length; i++) {
-		if (typeof model_definition[relTypes[i]] === 'object') {
+		if (isObject(model_definition[relTypes[i]])) {
 			let keys = Object.keys(model_definition[relTypes[i]]);
 			for (let j = 0; j < keys.length; j++) {
 				if (keys[j] === relationship) {

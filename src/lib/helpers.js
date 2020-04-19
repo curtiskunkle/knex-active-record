@@ -1,6 +1,10 @@
 export const getPropFromObject = (prop, object) => {
-	if (typeof object === 'object' && typeof object[prop] !== 'undefined') {
+	if (isObject(object) && typeof object[prop] !== 'undefined') {
 		return object[prop];
 	}
 	return null;
+}
+
+export const isObject = obj => {
+	return typeof obj === 'object' && obj !== null;
 }

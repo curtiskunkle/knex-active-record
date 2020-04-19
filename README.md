@@ -1,3 +1,3 @@
 # node-active-record
 
-A tiny ORM layer built on top of knex.js
+A tiny active record ORM layer built on top of knex.js
