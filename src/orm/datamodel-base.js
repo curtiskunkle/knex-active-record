@@ -1,10 +1,5 @@
-import { getPropFromObject, isObject } from './helpers';
-
-//@TODO put these constants in a separate file that can be shared with ORM, or just put them on ORM
-const BELONGS_TO = 'belongsTo';
-const HAS_MANY = 'hasMany';
-const HAS_ONE = 'hasOne';
-const HAS_MANY_THROUGH = 'hasManyThrough';
+import { getPropFromObject, isObject } from '../helpers';
+import { BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH } from './constants';
 
 /**
  * Base class that other data models will extend
@@ -87,7 +82,9 @@ export default class DataModelBase {
 		let savePromise = inserting
 			? knex(def.table).insert(values)
 			: knex(def.table).where(this.constructor.attr(this._pk()), this._id()).update(values);
+
 		try {
+			//@TODO why isnt this working for collar and how do we get the error???
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
 			if (inserting) this[this._pk()] = result[0];
 			let savedObject = await this.constructor.get(this._id());
@@ -283,46 +280,47 @@ export default class DataModelBase {
 	}
 
 	//@TODO finish this up - should work with other relationships too
-	async _hasManyThrough(localRelation, foreignRelation) {
+	async _hasManyThrough(throughRelation, targetRelation) {
 		const ORM = this.constructor.ORM;
-		const def = this.constructor.model_definition;
-		let result = findRelationshipInModelDefinition(def, localRelation);
-		let intermediateType = result.type;
-		let intermediateRelation = result.relation;
-		if (!intermediateRelation || (intermediateType !== HAS_MANY && intermediateType !== BELONGS_TO) || !ORM.modelRegistry[intermediateRelation.model]) {
-			//invalid here
+		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
+		if (typeof data === 'string') {
+			this.debug(data);
+			return [];
 		}
-		const intermediateModel = ORM.modelRegistry[intermediateRelation.model];
-		result = findRelationshipInModelDefinition(intermediateModel.model_definition, foreignRelation);
-		let targetType = result.type;
-		let targetRelation = result.relation;
-		if (!targetRelation || targetType !== HAS_MANY || !ORM.modelRegistry[targetRelation.model]) {
-			//invalid here
-		}
-		const targetModel = ORM.modelRegistry[targetRelation.model];
+		const relationshipCombination = data.throughRelationshipType + '-' + data.targetRelationshipType;
+		const throughModel = ORM.modelRegistry[data.throughModel];
+		const targetModel = ORM.modelRegistry[data.targetModel];
+		const { throughKey, targetKey } = data;
 		try {
-			return await targetModel
-				.find()
-				.join(
-					intermediateModel._table(),
-					intermediateModel.attr(intermediateModel._pk()),
-					'=',
-					targetModel.attr(targetRelation.key)
-				)
-				.join(
-					this.constructor._table(),
-					this.constructor.attr(this._pk()),
-					'=',
-					intermediateModel.attr(intermediateRelation.key)
-				)
-				.where(this.constructor.attr(this.constructor._pk()), this._id());
+			switch(relationshipCombination) {
+				case `${HAS_MANY}-${HAS_MANY}`:
+			    	return await targetModel
+					.find()
+					.join(
+						throughModel._table(),
+						throughModel.attr(throughModel._pk()),
+						'=',
+						targetModel.attr(targetKey)
+					)
+					.join(
+						this.constructor._table(),
+						this.constructor.attr(this._pk()),
+						'=',
+						throughModel.attr(throughKey)
+					)
+					.where(this.constructor.attr(this.constructor._pk()), this._id());
+			    break;
+
+			  	default:
+			    	this.debug(`Invalid relationship combination for hasManyThrough ${relationshipCombination}`);
+			    	return Promise.resolve([]);
+			}
 		} catch(err) {
 			this.debug(err);
 			return Promise.resolve([]);
 		}
 	}
 
-	//@TODO is this how this should work?  Could easily be overridden if console output is not the desired behavior
 	static debug(message) {
 		console.log(message);
 	}
@@ -365,19 +363,4 @@ function transformQueryResults(model_definition, classConstructor) {
 		});
 		return Object.values(grouped);
 	};
-}
-
-function findRelationshipInModelDefinition(model_definition, relationship) {
-	const relTypes = [BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH];
-	for(let i = 0; i < relTypes.length; i++) {
-		if (isObject(model_definition[relTypes[i]])) {
-			let keys = Object.keys(model_definition[relTypes[i]]);
-			for (let j = 0; j < keys.length; j++) {
-				if (keys[j] === relationship) {
-					return {type: relTypes[i], relation: model_definition[relTypes[i]][keys[j]]};
-				}
-			}
-		}
-	}
-	return {type: null, relation: null};
 }

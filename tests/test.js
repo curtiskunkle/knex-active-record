@@ -60,6 +60,25 @@ class Cat extends ORM.Model {
 			hasMany: {
 				catToys: {model: "CatToy", key: "cat_id"},
 			},
+			hasOne: {
+				collor: {model: "Collar", key: "cat_id"},
+			}
+		}
+	};
+}
+
+class Collar extends ORM.Model {
+	static get model_definition() {
+		return {
+			table: "collar",
+			attributes: {
+				id: {},
+				cat_id: {},
+				color: {},
+			},
+			belongsTo: {
+				cat: {model: "Cat", key: "cat_id"},
+			}
 		}
 	};
 }
@@ -81,20 +100,18 @@ class CatToy extends ORM.Model {
 	};
 }
 
-ORM.register([PetOwner, Cat, CatToy]);
+ORM.register([PetOwner, Cat, CatToy, Collar]);
 
 async function performTest() {
-	let owner = new PetOwner();
-	owner.name = "test name";
-	await owner.save();
-	console.log(owner);
+	let owner = await PetOwner.findOne();
+	console.log(owner, await owner.catToys());
 }
 
 async function runTest() {
 	try {
-		// await initDB();
-		// await populateDb();
-		await performTest();
+		await initDB();
+		await populateDb();
+		// await performTest();
 		process.exit();
 	}catch(err) {
 		console.log('the error', err);
@@ -106,6 +123,7 @@ async function initDB() {
 	await ORM.knex.schema.dropTableIfExists('pet_owner');
 	await ORM.knex.schema.dropTableIfExists('cat');
 	await ORM.knex.schema.dropTableIfExists('cat_toy');
+	await ORM.knex.schema.dropTableIfExists('collar');
 	await ORM.knex.schema.createTable('pet_owner', function (table) {
 	  table.increments();
 	  table.string('name');
@@ -115,6 +133,11 @@ async function initDB() {
 	  table.integer('pet_owner_id');
 	  table.string('name');
 	  table.string('breed');
+	});
+	await ORM.knex.schema.createTable('collar', function (table) {
+	  table.increments();
+	  table.integer('cat_id');
+	  table.string('color');
 	});
 	await ORM.knex.schema.createTable('cat_toy', function (table) {
 	  table.increments();
@@ -213,6 +236,22 @@ async function populateDb() {
 	toy.name = "Squeaky Mouse";
 	toy.cat_id = fez._id();
 	await toy.save();
+
+	const cats = await Cat.find();
+	cats.map(async cat => {
+
+		let collar = new Collar();
+		collar.cat_id = cat._id();
+		collar.color = "blue";
+
+		//@TODO WHY ISNT THIS SAVING
+		try {
+			console.log(await collar.save());
+		}catch(err) {
+			console.log('err', err)
+		}
+
+	});
 }
 
 runTest()

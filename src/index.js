@@ -1,5 +1,5 @@
-import ORMBase from './lib/orm-base';
-import DataModelBase from './lib/datamodel-base'
+import ORMBase from './orm/orm-base';
+import DataModelBase from './orm/datamodel-base'
 
 const initORM = config => {
     const initializedOrm = new ORMBase(config);
