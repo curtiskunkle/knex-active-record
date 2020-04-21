@@ -79,12 +79,12 @@ export default class DataModelBase {
 				values[attr] = this[attr];
 			}
 		});
+
 		let savePromise = inserting
 			? knex(def.table).insert(values)
 			: knex(def.table).where(this.constructor.attr(this._pk()), this._id()).update(values);
 
 		try {
-			//@TODO why isnt this working for collar and how do we get the error???
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
 			if (inserting) this[this._pk()] = result[0];
 			let savedObject = await this.constructor.get(this._id());
@@ -93,7 +93,8 @@ export default class DataModelBase {
 			}
 			return Promise.resolve(true);
 		} catch(err) {
-			return Promise.reject(err);
+			this.debug(err);
+			return Promise.reject(false);
 		}
 	};
 
