@@ -26,11 +26,10 @@ export default class ORMBase {
 	}
 
 	register (model) {
-		if (!Array.isArray(model)) model = [model];
-		let that = this;
-		model.map(m => {
-			that.modelRegistry[m.name] = m;
-		});
+		//@TODO validate model here
+		//make sure it extends model
+		//validate model_defintion
+		this.modelRegistry[model.name] = model;
 	}
 
 	getThroughRelationshipData(parentModel, throughRelation, targetRelation) {
@@ -56,8 +55,9 @@ export default class ORMBase {
 			}
 		});
 		if (!result.throughModel) return `Invalid through relation [${throughRelation}]`;
-		if (!this.modelRegistry[result.throughModel]) return `Invalid intermediate model [${result.throughModel}]`;
-		const target_model_definition = this.modelRegistry[result.throughModel].model_definition;
+		if (!this.modelRegistry[result.throughModel]) return `Invalid through model [${result.throughModel}]`;
+		result.throughModel = this.modelRegistry[result.throughModel];
+		const target_model_definition = result.throughModel.model_definition;
 		relTypes.map(relType => {
 			if (isObject(target_model_definition[relType])) {
 				const relKeys = Object.keys(target_model_definition[relType]);
@@ -68,6 +68,10 @@ export default class ORMBase {
 				}
 			}
 		});
+		if (!result.targetModel) return `Invalid target relation [${targetRelation}]`;
+		if (!this.modelRegistry[result.targetModel]) return `Invalid target model [${result.targetModel}]`;
+		result.targetModel = this.modelRegistry[result.targetModel];
+		result.relationshipCombination = result.throughRelationshipType + '-' + result.targetRelationshipType;
 		return result;
 	}
 }

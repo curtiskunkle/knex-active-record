@@ -1,15 +1,16 @@
 import { initDB, populateDb, PetOwner, Cat, CatToy, Collar, Tag } from './provide'
 
 async function performTest() {
-	await function1();
-	console.log('made');
+	let collar = await Collar.findOne();
+
+	collar.owner();
 }
 
 async function runTest() {
 	try {
-		await initDB();
-		await populateDb();
-		// await performTest();
+		// await initDB();
+		// await populateDb();
+		await performTest();
 		process.exit();
 	}catch(err) {
 		console.log('the error', err);

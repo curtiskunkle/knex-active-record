@@ -31,6 +31,7 @@ export class PetOwner extends ORM.Model {
 			},
 			hasManyThrough: {
 				catToys: {through: 'cats', relationship: "catToys"},
+				collars: {through: 'cats', relationship: "collar"},
 			}
 		}
 	};
@@ -57,7 +58,10 @@ export class Cat extends ORM.Model {
 				catToys: {model: "CatToy", key: "cat_id"},
 			},
 			hasOne: {
-				collor: {model: "Collar", key: "cat_id"},
+				collar: {model: "Collar", key: "cat_id"},
+			},
+			hasManyThrough: {
+				tags: {through: 'collar', relationship: "tags"},
 			}
 		}
 	};
@@ -74,6 +78,12 @@ export class Collar extends ORM.Model {
 			},
 			belongsTo: {
 				cat: {model: "Cat", key: "cat_id"},
+			},
+			belongsToThrough: {
+				owner: {through: "cat", relationship: "owner"},
+			},
+			hasMany: {
+				tags: {model: "Tag", key: "collar_id"}
 			}
 		}
 	};
@@ -89,7 +99,7 @@ export class Tag extends ORM.Model {
 				message: {},
 			},
 			belongsTo: {
-				cat: {model: "Collar", key: "collar_id"},
+				collar: {model: "Collar", key: "collar_id"},
 			}
 		}
 	};
@@ -112,7 +122,11 @@ export class CatToy extends ORM.Model {
 	};
 }
 
-ORM.register([PetOwner, Cat, CatToy, Collar, Tag]);
+ORM.register(PetOwner);
+ORM.register(Cat);
+ORM.register(CatToy);
+ORM.register(Collar);
+ORM.register(Tag);
 
 export const initDB = async () => {
 	await ORM.knex.schema.dropTableIfExists('pet_owner');
