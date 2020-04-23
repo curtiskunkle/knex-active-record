@@ -8,7 +8,6 @@ export default class DataModelBase {
 	constructor() {
 		this.constructAttributes();
 		this.applyRelations();
-		this._loadedRelations = {};
 	}
 
 	/**
@@ -197,13 +196,13 @@ export default class DataModelBase {
 	applyRelations() {
 		const def = this.constructor.model_definition;
 		let that = this;
-		let relationTypes = [HAS_MANY, BELONGS_TO, HAS_ONE, HAS_MANY_THROUGH, BELONGS_TO_THROUGH];
+		let relationTypes = [HAS_MANY, BELONGS_TO, HAS_ONE, HAS_MANY_THROUGH, BELONGS_TO_THROUGH, HAS_ONE_THROUGH];
 		relationTypes.map(relType => {
 			if (isObject(def[relType])) {
 				Object.keys(def[relType]).map(relationName => {
 					let config = def[relType][relationName];
 					if (isObject(config)) {
-						if ([BELONGS_TO_THROUGH, HAS_MANY_THROUGH].indexOf(relType) !== -1 && config.through && config.relationship) {
+						if ([BELONGS_TO_THROUGH, HAS_MANY_THROUGH, HAS_ONE_THROUGH].indexOf(relType) !== -1 && config.through && config.relationship) {
 							that[relationName] = () => {
 								return that._doRelation(relationName, relType,  () => {
 									return that["_" + relType](config.through, config.relationship);
@@ -223,15 +222,9 @@ export default class DataModelBase {
 	}
 
 	//this should wrap other relationship functions
-	//should perform checking for loaded relationship and populating it
 	async _doRelation(key, type, getFunc) {
 		if (!this._id()) return relationDefault(type);
-		if (typeof this._loadedRelations[key] !== 'undefined') return this._loadedRelations[key];
-		const result = await getFunc();
-		if ((Array.isArray(result) && result.length) || !Array.isArray(result) && result) {
-			this._loadedRelations[key] = result;
-		}
-		return result;
+		return getFunc();
 	}
 
 	async _hasMany(model, key) {
@@ -241,12 +234,7 @@ export default class DataModelBase {
 			this.debug("Invalid model provided for hasMany relationship");
 			return Promise.resolve([]);
 		}
-		try {
-			return await modelClass.find().where(modelClass.attr(key), this._id());
-		} catch(err) {
-			debug(err);
-			return Promise.resolve([]);
-		}
+		return modelClass.find().where(modelClass.attr(key), this._id());
 	}
 
 	async _belongsTo(model, key) {
@@ -256,12 +244,7 @@ export default class DataModelBase {
 			this.debug("Invalid model provided for belongsTo relationship");
 			return Promise.resolve(null);
 		}
-		try {
-			return await modelClass.findByPk(this[key]);
-		} catch(err) {
-			debug(err);
-			return Promise.resolve(null);
-		}
+		return modelClass.findByPk(this[key]);
 	}
 
 
@@ -272,12 +255,7 @@ export default class DataModelBase {
 			this.debug("Invalid model provided for belongsTo relationship");
 			return Promise.resolve(null);
 		}
-		try {
-			return await modelClass.findOne().where(modelClass.attr(key), this._id());
-		} catch(err) {
-			debug(err);
-			return Promise.resolve(null);
-		}
+		return await modelClass.findOne().where(modelClass.attr(key), this._id());
 	}
 
 	async _hasManyThrough(throughRelation, targetRelation) {
@@ -287,32 +265,52 @@ export default class DataModelBase {
 			this.debug(data);
 			return Promise.resolve([]);
 		}
-
 		const validCombinations = [`${HAS_MANY}-${HAS_MANY}`, `${HAS_ONE}-${HAS_MANY}`, `${HAS_MANY}-${HAS_ONE}`];
 		if (validCombinations.indexOf(data.relationshipCombination) === -1) {
 			this.debug(`Invalid relationship combination for hasManyThrough ${relationshipCombination}`);
 			return Promise.resolve([]);
 		}
-		try {
-	    	return await data.targetModel
-			.find()
-			.join(
-				data.throughModel._table(),
-				data.throughModel.attr(data.throughModel._pk()),
-				'=',
-				data.targetModel.attr(data.targetKey)
-			)
-			.join(
-				this.constructor._table(),
-				this.constructor.attr(this._pk()),
-				'=',
-				data.throughModel.attr(data.throughKey)
-			)
-			.where(this.constructor.attr(this.constructor._pk()), this._id());
-		} catch(err) {
-			this.debug(err);
+	    return data.targetModel.find()
+		.join(
+			data.throughModel._table(),
+			data.throughModel.attr(data.throughModel._pk()),
+			'=',
+			data.targetModel.attr(data.targetKey)
+		)
+		.join(
+			this.constructor._table(),
+			this.constructor.attr(this._pk()),
+			'=',
+			data.throughModel.attr(data.throughKey)
+		)
+		.where(this.constructor.attr(this.constructor._pk()), this._id());
+	}
+
+	async _hasOneThrough(throughRelation, targetRelation) {
+		const ORM = this.constructor.ORM;
+		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
+		if (typeof data === 'string') {
+			this.debug(data);
 			return Promise.resolve([]);
 		}
+		if (data.relationshipCombination !== `${HAS_ONE}-${HAS_ONE}`) {
+			this.debug(`Invalid relationship combination for hasOneThrough ${relationshipCombination}`);
+			return Promise.resolve([]);
+		}
+	    return data.targetModel.findOne()
+		.join(
+			data.throughModel._table(),
+			data.throughModel.attr(data.throughModel._pk()),
+			'=',
+			data.targetModel.attr(data.targetKey)
+		)
+		.join(
+			this.constructor._table(),
+			this.constructor.attr(this._pk()),
+			'=',
+			data.throughModel.attr(data.throughKey)
+		)
+		.where(this.constructor.attr(this.constructor._pk()), this._id());
 	}
 
 	async _belongsToThrough(throughRelation, targetRelation) {
@@ -327,44 +325,20 @@ export default class DataModelBase {
 			this.debug(`Invalid relationship combination for belongsToThrough ${relationshipCombination}`);
 			return Promise.resolve(null);
 		}
-
-		//@TODO this query is wrong.  might need to return different keys from getThroughRelationshipData for this type.
-		console.log(data.targetModel
-			.findOne()
-			.join(
-				data.throughModel._table(),
-				data.throughModel.attr(data.throughModel._pk()),
-				'=',
-				data.targetModel.attr(data.targetKey)
-			)
-			.join(
-				this.constructor._table(),
-				this.constructor.attr(this._pk()),
-				'=',
-				data.throughModel.attr(data.throughKey)
-			)
-			.where(this.constructor.attr(this.constructor._pk()), this._id()).toSQL().toNative());
-
-		try {
-	    	return await data.targetModel
-			.findOne()
-			.join(
-				data.throughModel._table(),
-				data.throughModel.attr(data.throughModel._pk()),
-				'=',
-				data.targetModel.attr(data.targetKey)
-			)
-			.join(
-				this.constructor._table(),
-				this.constructor.attr(this._pk()),
-				'=',
-				data.throughModel.attr(data.throughKey)
-			)
-			.where(this.constructor.attr(this.constructor._pk()), this._id());
-		} catch(err) {
-			this.debug(err);
-			return Promise.resolve(null);
-		}
+    	return data.targetModel.findOne()
+		.join(
+			data.throughModel._table(),
+			data.throughModel.attr(data.targetKey),
+			'=',
+			data.targetModel.attr(data.targetModel._pk()),
+		)
+		.join(
+			this.constructor._table(),
+			this.constructor.attr(data.throughKey),
+			'=',
+			data.throughModel.attr(data.throughModel._pk())
+		)
+		.where(this.constructor.attr(this.constructor._pk()), this._id())
 	}
 
 	static debug(message) {

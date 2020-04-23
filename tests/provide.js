@@ -60,6 +60,9 @@ export class Cat extends ORM.Model {
 			hasOne: {
 				collar: {model: "Collar", key: "cat_id"},
 			},
+			hasOneThrough: {
+				leash: {through: "collar", relationship: "leash"}
+			},
 			hasManyThrough: {
 				tags: {through: 'collar', relationship: "tags"},
 			}
@@ -84,7 +87,26 @@ export class Collar extends ORM.Model {
 			},
 			hasMany: {
 				tags: {model: "Tag", key: "collar_id"}
+			},
+			hasOne: {
+				leash: {model: "Leash", key: "collar_id"}
 			}
+		}
+	};
+}
+
+export class Leash extends ORM.Model {
+	static get model_definition() {
+		return {
+			table: "leash",
+			attributes: {
+				id: {},
+				collar_id: {},
+				color: {},
+			},
+			belongsTo: {
+				collar: {model: "Collar", key: "collar_id"},
+			},
 		}
 	};
 }
@@ -127,6 +149,7 @@ ORM.register(Cat);
 ORM.register(CatToy);
 ORM.register(Collar);
 ORM.register(Tag);
+ORM.register(Leash);
 
 export const initDB = async () => {
 	await ORM.knex.schema.dropTableIfExists('pet_owner');
@@ -134,6 +157,7 @@ export const initDB = async () => {
 	await ORM.knex.schema.dropTableIfExists('cat_toy');
 	await ORM.knex.schema.dropTableIfExists('collar');
 	await ORM.knex.schema.dropTableIfExists('tag');
+	await ORM.knex.schema.dropTableIfExists('leash');
 	await ORM.knex.schema.createTable('pet_owner', function (table) {
 	  table.increments();
 	  table.string('name');
@@ -147,6 +171,11 @@ export const initDB = async () => {
 	await ORM.knex.schema.createTable('collar', function (table) {
 	  table.increments();
 	  table.integer('cat_id');
+	  table.string('color');
+	});
+	await ORM.knex.schema.createTable('leash', function (table) {
+	  table.increments();
+	  table.integer('collar_id');
 	  table.string('color');
 	});
 	await ORM.knex.schema.createTable('tag', function (table) {
@@ -262,11 +291,18 @@ export const populateDb = async() => {
 
 	const collars = await Collar.find();
 	let tag = null;
+	let leash = null;
 	for(let i = 0; i < collars.length; i++) {
+		leash = new Leash();
+		leash.collar_id = collars[i]._id();
+		leash.color = "green";
+		await leash.save();
+
 		tag = new Tag();
 		tag.collar_id = collars[i]._id();
 		tag.message = "This is a tag";
 		await tag.save();
+
 		tag = new Tag();
 		tag.collar_id = collars[i]._id();
 		tag.message = "This is a tag";
