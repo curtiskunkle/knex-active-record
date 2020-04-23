@@ -2,14 +2,11 @@ import { initDB, populateDb, PetOwner, Cat, CatToy, Collar, Tag } from './provid
 import FileCache from '../src/cache/FileCache';
 
 async function performTest() {
-	let cache = new FileCache();
-	await cache.set('key1', "A value", 5);
-	await cache.set('key2', "A value", 10);
-	await cache.set('key3', "A value", 15);
-	await cache.set('key4', "A value", 20);
-	await cache.set('key5', "A value", 200);
-
-	console.log(await cache.get("key7"));
+	// console.log(await Cat.findOne());
+	await Cat.cache(Cat.findOne());
+	await Cat.cache(Cat.findByPk(1));
+	await Cat.cache(Cat.findByPk(2));
+	await Cat.cache(Cat.findByPk(3));
 }
 
 async function runTest() {

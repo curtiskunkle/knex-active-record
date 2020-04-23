@@ -1,5 +1,10 @@
 import fs from 'fs';
 
+/**
+ * A very basic cache implementation that persists key / val pairs in the filesystem as a JSON file
+ * Probably shouldn't use this in a production application, this is really only meant to be a
+ * convenient way to simulate plugging in a real cache solution
+ */
 export default class FileCache {
 	constructor(filePath) {
 		this.filePath = filePath || 'file-cache.json';
@@ -69,10 +74,5 @@ export default class FileCache {
 			    }
 			});
 		});
-	}
-
-	//@TODO this should be determined by ORM
-	debug(err) {
-		console.log(err);
 	}
 }

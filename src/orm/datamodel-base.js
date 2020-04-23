@@ -179,10 +179,12 @@ export default class DataModelBase {
 		return `${this._table()}.${attribute}`;
 	}
 
-	static async cache(builder, options) {
-		const query = builder.toSQL().toNative();
-		const key = query.sql + JSON.stringify(query.bindings);
-		console.log(key);
+	static async cache(builder, options = null) {
+		return this.ORM.cache(builder, options);
+	}
+
+	async cache(builder, options = null) {
+		return this.constructor.cache(builder, options)
 	}
 
 	/**

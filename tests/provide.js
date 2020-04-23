@@ -1,4 +1,5 @@
 import initORM from '../src/index';
+import FileCache from '../src/cache/FileCache';
 
 let ORM = initORM({
 	client: 'mysql2',
@@ -11,8 +12,9 @@ let ORM = initORM({
 	},
 });
 
-// ORM.registerCache()
-
+ORM.debugMode = true;
+ORM.registerCache(new FileCache());
+ORM.debug('test');
 const trans = data => {
 	return "My name is " + data;
 }
@@ -146,12 +148,12 @@ export class CatToy extends ORM.Model {
 	};
 }
 
-ORM.register(PetOwner);
-ORM.register(Cat);
-ORM.register(CatToy);
-ORM.register(Collar);
-ORM.register(Tag);
-ORM.register(Leash);
+ORM.registerModel(PetOwner);
+ORM.registerModel(Cat);
+ORM.registerModel(CatToy);
+ORM.registerModel(Collar);
+ORM.registerModel(Tag);
+ORM.registerModel(Leash);
 
 export const initDB = async () => {
 	await ORM.knex.schema.dropTableIfExists('pet_owner');

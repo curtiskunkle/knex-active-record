@@ -6,30 +6,42 @@ export default class ORMBase {
 	constructor(config) {
 		this.modelRegistry = {};
 		this.knex = null;
+		this.cacheAdapter = null;
+		this.debugMode = false;
 		this.init(config);
 	}
 
 	init (config) {
 		this.knex = require('knex')({
 			...config,
-		  	postProcessResponse: (result, queryContext) => {
-		  		if (typeof queryContext === 'object' && typeof queryContext.ormtransform === 'function') {
-		  			const transformed = queryContext.ormtransform(result);
-		  			if (queryContext.returnSingleObject) {
-		  				return transformed.length ? transformed[0] : null;
-		  			}
-		  			return transformed;
-		  		}
-		  		return result;
-		  	}
+		  	postProcessResponse: this.processResponse
 		});
 	}
 
-	register (model) {
+	processResponse(result, queryContext) {
+  		if (isObject(queryContext) && typeof queryContext.ormtransform === 'function') {
+  			const transformed = queryContext.ormtransform(result);
+  			if (queryContext.returnSingleObject) {
+  				return transformed.length ? transformed[0] : null;
+  			}
+  			return transformed;
+  		}
+  		return result;
+  	}
+
+	registerModel (model) {
 		//@TODO validate model here
 		//make sure it extends model
 		//validate model_defintion
 		this.modelRegistry[model.name] = model;
+	}
+
+	registerCache(cacheAdapter) {
+		//@TODO set debug function of cache adapter here once ORM has one
+		//do some sort of validation on the cache adapter?  It should always have at least a get and set method.
+		//maybe here is where we should set the default TTL
+		this.cacheAdapter = cacheAdapter;
+		this.cacheAdapter.debug = this.debug;
 	}
 
 	getThroughRelationshipData(parentModel, throughRelation, targetRelation) {
@@ -73,5 +85,31 @@ export default class ORMBase {
 		result.targetModel = this.modelRegistry[result.targetModel];
 		result.relationshipCombination = result.throughRelationshipType + '-' + result.targetRelationshipType;
 		return result;
+	}
+
+	debug(error) {console.log(this.debugMode);
+		if (this.debugMode) {
+			this._debug(error);
+		}
+	}
+	_debug(error) {
+		console.log(error);
+	}
+
+	async cache(builder, options = null) {
+		if (!this.cacheAdapter) {
+			return builder;
+		}
+		const originalQueryContext = builder.queryContext();
+		builder.queryContext(null);
+		const query = builder.toSQL().toNative();
+		const key = query.sql + JSON.stringify(query.bindings);
+		const value = await this.cacheAdapter.get(key);
+		if (value) {
+			return this.processResponse(JSON.parse(value), originalQueryContext);
+		}
+		const queryResults = await builder;
+		await this.cacheAdapter.set(key, JSON.stringify(queryResults));
+		return this.processResponse(queryResults, originalQueryContext);
 	}
 }
