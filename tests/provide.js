@@ -11,6 +11,8 @@ let ORM = initORM({
 	},
 });
 
+// ORM.registerCache()
+
 const trans = data => {
 	return "My name is " + data;
 }

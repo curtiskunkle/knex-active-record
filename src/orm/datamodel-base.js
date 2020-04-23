@@ -179,6 +179,12 @@ export default class DataModelBase {
 		return `${this._table()}.${attribute}`;
 	}
 
+	static async cache(builder, options) {
+		const query = builder.toSQL().toNative();
+		const key = query.sql + JSON.stringify(query.bindings);
+		console.log(key);
+	}
+
 	/**
 	 * Instantiate defined attributes on instance object
 	 */
@@ -210,7 +216,7 @@ export default class DataModelBase {
 							)};
 						} else if (config.model && config.key) {
 							that[relationName] = () => {
-								return that._doRelation(relationName, relType,  async () => {
+								return that._doRelation(relationName, relType, () => {
 									return that["_" + relType](config.model, config.key);
 								}
 							)};
@@ -221,13 +227,12 @@ export default class DataModelBase {
 		});
 	}
 
-	//this should wrap other relationship functions
-	async _doRelation(key, type, getFunc) {
+	_doRelation(key, type, getFunc) {
 		if (!this._id()) return relationDefault(type);
 		return getFunc();
 	}
 
-	async _hasMany(model, key) {
+	_hasMany(model, key) {
 		const ORM = this.constructor.ORM;
 		const modelClass = ORM.modelRegistry[model];
 		if (!modelClass) {
@@ -237,7 +242,7 @@ export default class DataModelBase {
 		return modelClass.find().where(modelClass.attr(key), this._id());
 	}
 
-	async _belongsTo(model, key) {
+	_belongsTo(model, key) {
 		const ORM = this.constructor.ORM;
 		const modelClass = ORM.modelRegistry[model];
 		if (!modelClass) {
@@ -248,17 +253,17 @@ export default class DataModelBase {
 	}
 
 
-	async _hasOne(model, key) {
+	_hasOne(model, key) {
 		const ORM = this.constructor.ORM;
 		const modelClass = ORM.modelRegistry[model];
 		if (!modelClass) {
 			this.debug("Invalid model provided for belongsTo relationship");
 			return Promise.resolve(null);
 		}
-		return await modelClass.findOne().where(modelClass.attr(key), this._id());
+		return modelClass.findOne().where(modelClass.attr(key), this._id());
 	}
 
-	async _hasManyThrough(throughRelation, targetRelation) {
+	_hasManyThrough(throughRelation, targetRelation) {
 		const ORM = this.constructor.ORM;
 		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 		if (typeof data === 'string') {
@@ -286,7 +291,7 @@ export default class DataModelBase {
 		.where(this.constructor.attr(this.constructor._pk()), this._id());
 	}
 
-	async _hasOneThrough(throughRelation, targetRelation) {
+	_hasOneThrough(throughRelation, targetRelation) {
 		const ORM = this.constructor.ORM;
 		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 		if (typeof data === 'string') {
@@ -313,7 +318,7 @@ export default class DataModelBase {
 		.where(this.constructor.attr(this.constructor._pk()), this._id());
 	}
 
-	async _belongsToThrough(throughRelation, targetRelation) {
+	_belongsToThrough(throughRelation, targetRelation) {
 		const ORM = this.constructor.ORM;
 		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 		if (typeof data === 'string') {
