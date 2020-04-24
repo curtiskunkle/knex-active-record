@@ -1,165 +1,15 @@
-import initORM from '../src/index';
+import initORM from '../build/index';
 
-let ORM = initORM({
-	client: 'mysql2',
-	connection: {
-	    host : 'localhost',
-	    port: 3306,
-	    user : 'root',
-	    password : 'password123',
-	    database : 'test'
-	},
-});
-
-// ORM.debugMode = true;
-
-const trans = data => {
-	return "My name is " + data;
-}
-
-export class PetOwner extends ORM.Model {
-	static get model_definition() {
-		return {
-			table: "pet_owner",
-			attributes: {
-				id: null,
-				name: {
-					transform: trans,
-					required: true
-				},
-			},
-			hasMany: {
-				cats: {model: "Cat", key: "pet_owner_id"},
-			},
-			hasManyThrough: {
-				catToys: {through: 'cats', relationship: "catToys"},
-				collars: {through: 'cats', relationship: "collar"},
-			}
-		}
-	};
-
-	transform() {
-		this.name = "this is a test transform";
-	}
-}
-
-export class Cat extends ORM.Model {
-	static get model_definition() {
-		return {
-			table: "cat",
-			attributes: {
-				id: {},
-				pet_owner_id: {},
-				name: {},
-				breed: {},
-			},
-			belongsTo: {
-				owner: {model: "PetOwner", key: "pet_owner_id"}
-			},
-			hasMany: {
-				catToys: {model: "CatToy", key: "cat_id"},
-			},
-			hasOne: {
-				collar: {model: "Collar", key: "cat_id"},
-			},
-			hasOneThrough: {
-				leash: {through: "collar", relationship: "leash"}
-			},
-			hasManyThrough: {
-				tags: {through: 'collar', relationship: "tags"},
-			}
-		}
-	};
-}
-
-export class Collar extends ORM.Model {
-	static get model_definition() {
-		return {
-			table: "collar",
-			attributes: {
-				id: {},
-				cat_id: {},
-				color: {},
-			},
-			belongsTo: {
-				cat: {model: "Cat", key: "cat_id"},
-			},
-			belongsToThrough: {
-				owner: {through: "cat", relationship: "owner"},
-			},
-			hasMany: {
-				tags: {model: "Tag", key: "collar_id"}
-			},
-			hasOne: {
-				leash: {model: "Leash", key: "collar_id"}
-			}
-		}
-	};
-}
-
-export class Leash extends ORM.Model {
-	static get model_definition() {
-		return {
-			table: "leash",
-			attributes: {
-				id: {},
-				collar_id: {},
-				color: {},
-			},
-			belongsTo: {
-				collar: {model: "Collar", key: "collar_id"},
-			},
-		}
-	};
-}
-
-export class Tag extends ORM.Model {
-	static get model_definition() {
-		return {
-			table: "tag",
-			attributes: {
-				id: {},
-				collar_id: {},
-				message: {},
-			},
-			belongsTo: {
-				collar: {model: "Collar", key: "collar_id"},
-			}
-		}
-	};
-}
-
-export class CatToy extends ORM.Model {
-	static get model_definition() {
-		return {
-			table: "cat_toy",
-			attributes: {
-				id: {},
-				cat_id: {},
-				name: {},
-				contains_catnip: {},
-			},
-			belongsTo: {
-				cat: {model: "Cat", key: "cat_id"},
-			}
-		}
-	};
-}
-
-ORM.registerModel(PetOwner);
-ORM.registerModel(Cat);
-ORM.registerModel(CatToy);
-ORM.registerModel(Collar);
-ORM.registerModel(Tag);
-ORM.registerModel(Leash);
-
-export const initDB = async () => {
+export const initDB = async (ORM) => {
+	//clean db
 	await ORM.knex.schema.dropTableIfExists('pet_owner');
 	await ORM.knex.schema.dropTableIfExists('cat');
 	await ORM.knex.schema.dropTableIfExists('cat_toy');
 	await ORM.knex.schema.dropTableIfExists('collar');
 	await ORM.knex.schema.dropTableIfExists('tag');
 	await ORM.knex.schema.dropTableIfExists('leash');
+
+	//build schema
 	await ORM.knex.schema.createTable('pet_owner', function (table) {
 	  table.increments();
 	  table.string('name');
@@ -192,122 +42,123 @@ export const initDB = async () => {
 	  table.integer('contains_catnip').defaultTo(0);
 	});
 }
-export const populateDb = async() => {
-	let billy = new PetOwner();
-	billy.name = "Billy";
-	await billy.save();
 
-	let bob = new PetOwner();
-	bob.name = "Bob";
-	await bob.save();
+// export const populateDb = async() => {
+// 	let billy = new PetOwner();
+// 	billy.name = "Billy";
+// 	await billy.save();
 
-	let sally = new PetOwner();
-	sally.name = "sally";
-	await sally.save();
+// 	let bob = new PetOwner();
+// 	bob.name = "Bob";
+// 	await bob.save();
 
-	let spot = new Cat();
-	spot.pet_owner_id = billy._id();
-	spot.name = "spot";
-	spot.breed = "Shorthair";
-	await spot.save();
+// 	let sally = new PetOwner();
+// 	sally.name = "sally";
+// 	await sally.save();
 
-	let fluffy = new Cat();
-	fluffy.pet_owner_id = billy._id();
-	fluffy.name = "fluffy";
-	fluffy.breed = "Longhair";
-	await fluffy.save();
+// 	let spot = new Cat();
+// 	spot.pet_owner_id = billy._id();
+// 	spot.name = "spot";
+// 	spot.breed = "Shorthair";
+// 	await spot.save();
 
-	let felix = new Cat();
-	felix.pet_owner_id = billy._id();
-	felix.name = "felix";
-	felix.breed = "Shorthair";
-	await felix.save();
+// 	let fluffy = new Cat();
+// 	fluffy.pet_owner_id = billy._id();
+// 	fluffy.name = "fluffy";
+// 	fluffy.breed = "Longhair";
+// 	await fluffy.save();
 
-	let max = new Cat();
-	max.pet_owner_id = bob._id();
-	max.name = "max";
-	max.breed = "Shorthair";
-	await max.save();
+// 	let felix = new Cat();
+// 	felix.pet_owner_id = billy._id();
+// 	felix.name = "felix";
+// 	felix.breed = "Shorthair";
+// 	await felix.save();
 
-	let fez = new Cat();
-	fez.pet_owner_id = bob._id();
-	fez.name = "fez";
-	fez.breed = "Shorthair";
-	await fez.save();
+// 	let max = new Cat();
+// 	max.pet_owner_id = bob._id();
+// 	max.name = "max";
+// 	max.breed = "Shorthair";
+// 	await max.save();
 
-	let lucy = new Cat();
-	lucy.pet_owner_id = sally._id();
-	lucy.name = "lucy";
-	lucy.breed = "Shorthair";
-	await lucy.save();
+// 	let fez = new Cat();
+// 	fez.pet_owner_id = bob._id();
+// 	fez.name = "fez";
+// 	fez.breed = "Shorthair";
+// 	await fez.save();
 
-	let toy;
-	toy = new CatToy();
-	toy.name = "Ball of Yarn";
-	toy.cat_id = spot._id();
-	await toy.save();
+// 	let lucy = new Cat();
+// 	lucy.pet_owner_id = sally._id();
+// 	lucy.name = "lucy";
+// 	lucy.breed = "Shorthair";
+// 	await lucy.save();
 
-	toy = new CatToy();
-	toy.name = "Ball of Yarn";
-	toy.cat_id = fluffy._id();
-	await toy.save();
+// 	let toy;
+// 	toy = new CatToy();
+// 	toy.name = "Ball of Yarn";
+// 	toy.cat_id = spot._id();
+// 	await toy.save();
 
-	toy = new CatToy();
-	toy.name = "Ball of Yarn";
-	toy.cat_id = felix._id();
-	await toy.save();
+// 	toy = new CatToy();
+// 	toy.name = "Ball of Yarn";
+// 	toy.cat_id = fluffy._id();
+// 	await toy.save();
 
-	toy = new CatToy();
-	toy.name = "Scratching post";
-	toy.cat_id = max._id();
-	await toy.save();
+// 	toy = new CatToy();
+// 	toy.name = "Ball of Yarn";
+// 	toy.cat_id = felix._id();
+// 	await toy.save();
 
-	toy = new CatToy();
-	toy.name = "Scratching post";
-	toy.cat_id = fez._id();
-	await toy.save();
+// 	toy = new CatToy();
+// 	toy.name = "Scratching post";
+// 	toy.cat_id = max._id();
+// 	await toy.save();
 
-	toy = new CatToy();
-	toy.name = "Scratching post";
-	toy.cat_id = lucy._id();
-	await toy.save();
+// 	toy = new CatToy();
+// 	toy.name = "Scratching post";
+// 	toy.cat_id = fez._id();
+// 	await toy.save();
 
-	toy = new CatToy();
-	toy.name = "Squeaky Mouse";
-	toy.cat_id = felix._id();
-	await toy.save();
+// 	toy = new CatToy();
+// 	toy.name = "Scratching post";
+// 	toy.cat_id = lucy._id();
+// 	await toy.save();
 
-	toy = new CatToy();
-	toy.name = "Squeaky Mouse";
-	toy.cat_id = fez._id();
-	await toy.save();
+// 	toy = new CatToy();
+// 	toy.name = "Squeaky Mouse";
+// 	toy.cat_id = felix._id();
+// 	await toy.save();
 
-	const cats = await Cat.find();
-	let collar = null;
-	for(let i = 0; i < cats.length; i++) {
-		collar = new Collar();
-		collar.cat_id = cats[i]._id();
-		collar.color = "blue";
-		await collar.save();
-	}
+// 	toy = new CatToy();
+// 	toy.name = "Squeaky Mouse";
+// 	toy.cat_id = fez._id();
+// 	await toy.save();
 
-	const collars = await Collar.find();
-	let tag = null;
-	let leash = null;
-	for(let i = 0; i < collars.length; i++) {
-		leash = new Leash();
-		leash.collar_id = collars[i]._id();
-		leash.color = "green";
-		await leash.save();
+// 	const cats = await Cat.find();
+// 	let collar = null;
+// 	for(let i = 0; i < cats.length; i++) {
+// 		collar = new Collar();
+// 		collar.cat_id = cats[i]._id();
+// 		collar.color = "blue";
+// 		await collar.save();
+// 	}
 
-		tag = new Tag();
-		tag.collar_id = collars[i]._id();
-		tag.message = "This is a tag";
-		await tag.save();
+// 	const collars = await Collar.find();
+// 	let tag = null;
+// 	let leash = null;
+// 	for(let i = 0; i < collars.length; i++) {
+// 		leash = new Leash();
+// 		leash.collar_id = collars[i]._id();
+// 		leash.color = "green";
+// 		await leash.save();
 
-		tag = new Tag();
-		tag.collar_id = collars[i]._id();
-		tag.message = "This is a tag";
-		await tag.save();
-	}
-}
+// 		tag = new Tag();
+// 		tag.collar_id = collars[i]._id();
+// 		tag.message = "This is a tag";
+// 		await tag.save();
+
+// 		tag = new Tag();
+// 		tag.collar_id = collars[i]._id();
+// 		tag.message = "This is a tag";
+// 		await tag.save();
+// 	}
+// }

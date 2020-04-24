@@ -19,14 +19,6 @@ export default class DataModelBase {
 	}
 
 	/**
-	 * Convenience method for getting pk in instance methods
-	 * @return string
-	 */
-	_pk() {
-		return this.constructor._pk();
-	}
-
-	/**
 	 * Return this models table name
 	 * @return string
 	 */
@@ -39,7 +31,7 @@ export default class DataModelBase {
 	 * @return mixed
 	 */
 	_id() {
-		return this[this._pk()];
+		return this[this.constructor._pk()];
 	}
 
 	/**
@@ -74,18 +66,18 @@ export default class DataModelBase {
 		//get values for save
 		let values = {};
 		attributeKeys.map(attr => {
-			if (attr != this._pk()) {
+			if (attr != this.constructor._pk()) {
 				values[attr] = this[attr];
 			}
 		});
 
 		let savePromise = inserting
 			? knex(def.table).insert(values)
-			: knex(def.table).where(this.constructor.attr(this._pk()), this._id()).update(values);
+			: knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
 
 		try {
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
-			if (inserting) this[this._pk()] = result[0];
+			if (inserting) this[this.constructor._pk()] = result[0];
 			let savedObject = await this.constructor.findByPk(this._id());
 			for(let i = 0; i < attributeKeys.length; i++) {
 				this[Object.keys(def.attributes)[i]] = savedObject[Object.keys(def.attributes)[i]];
@@ -124,7 +116,7 @@ export default class DataModelBase {
 	delete(transaction = null) {
 		const knex = this.constructor.ORM.knex;
 		const def = this.constructor.model_definition;
-		const deletion = knex(def.table).where(this.constructor.attr(this._pk()), this._id()).del();
+		const deletion = knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).del();
 		return transaction ? deletion.transacting(transaction) : deletion;
 	}
 
@@ -278,7 +270,7 @@ export default class DataModelBase {
 		)
 		.join(
 			this.constructor._table(),
-			this.constructor.attr(this._pk()),
+			this.constructor.attr(this.constructor._pk()),
 			'=',
 			data.throughModel.attr(data.throughKey)
 		)
@@ -305,7 +297,7 @@ export default class DataModelBase {
 		)
 		.join(
 			this.constructor._table(),
-			this.constructor.attr(this._pk()),
+			this.constructor.attr(this.constructor._pk()),
 			'=',
 			data.throughModel.attr(data.throughKey)
 		)
