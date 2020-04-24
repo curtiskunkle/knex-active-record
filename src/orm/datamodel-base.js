@@ -179,14 +179,6 @@ export default class DataModelBase {
 		return `${this._table()}.${attribute}`;
 	}
 
-	static async cache(builder, options = null) {
-		return this.ORM.cache(builder, options);
-	}
-
-	async cache(builder, options = null) {
-		return this.constructor.cache(builder, options)
-	}
-
 	/**
 	 * Instantiate defined attributes on instance object
 	 */
@@ -349,7 +341,7 @@ export default class DataModelBase {
 	}
 
 	static debug(message) {
-		console.log(message);
+		this.ORM.debug(message);
 	}
 
 	debug(message) {

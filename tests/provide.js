@@ -1,5 +1,4 @@
 import initORM from '../src/index';
-import FileCache from '../src/cache/FileCache';
 
 let ORM = initORM({
 	client: 'mysql2',
@@ -12,9 +11,8 @@ let ORM = initORM({
 	},
 });
 
-ORM.debugMode = true;
-ORM.registerCache(new FileCache());
-ORM.debug('test');
+// ORM.debugMode = true;
+
 const trans = data => {
 	return "My name is " + data;
 }
