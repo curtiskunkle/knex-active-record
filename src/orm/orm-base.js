@@ -86,4 +86,9 @@ export default class ORMBase {
 	_debug(error) {
 		console.log(error);
 	}
+
+	//@todo
+	async saveAll(transaction = null) {}
+	async deleteAll(transaction = null) {}
+	async batchInsert(transaction = null) {}
 }

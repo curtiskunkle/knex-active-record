@@ -1,5 +1,5 @@
 export default {
-	mysql: {
+	mysql2: {
 		client: 'mysql2',
 		connection: {
 		    host : 'localhost',

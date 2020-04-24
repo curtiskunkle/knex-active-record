@@ -6,7 +6,9 @@
   "scripts": {
     "build": "rm -rf build && babel src -d build",
     "test": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/**/*.test.js",
-    "test:unit": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/unit/**/*.test.js"
+    "test:unit": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/unit/**/*.test.js",
+    "test:integration": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/integration/**/*.test.js",
+    "test:mysql2": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha test-build/integration/mysql2.test.js"
   },
   "author": "",
   "license": "ISC",

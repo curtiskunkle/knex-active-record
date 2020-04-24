@@ -19,6 +19,8 @@ var _helpers = require("../helpers");
 
 var _constants = require("./constants");
 
+var _errors = require("./errors");
+
 /**
  * Base class that other data models will extend
  */
@@ -99,7 +101,7 @@ var DataModelBase = /*#__PURE__*/function () {
                   break;
                 }
 
-                return _context.abrupt("return", Promise.reject(new Error("".concat(this.constructor.name, " missing required attribute [").concat(thisKey, "]"))));
+                throw new _errors.MissingRequiredAttributeError(this, thisKey);
 
               case 12:
                 _context.t0 = typeof validate === 'function';
@@ -121,7 +123,7 @@ var DataModelBase = /*#__PURE__*/function () {
                   break;
                 }
 
-                return _context.abrupt("return", Promise.reject(new Error("".concat(this.constructor.name, " [").concat(thisKey, "] attribute failed validation"))));
+                throw new _errors.InvalidAttributeError(this, thisKey);
 
               case 19:
                 i++;
@@ -138,7 +140,7 @@ var DataModelBase = /*#__PURE__*/function () {
                   break;
                 }
 
-                return _context.abrupt("return", Promise.reject(new Error("".concat(this.constructor.name, " failed validation"))));
+                throw new _errors.InavlidInstanceError(this);
 
               case 26:
                 //get values for save
@@ -190,7 +192,7 @@ var DataModelBase = /*#__PURE__*/function () {
                 _context.prev = 48;
                 _context.t2 = _context["catch"](29);
                 this.debug(_context.t2);
-                return _context.abrupt("return", Promise.reject(false));
+                throw _context.t2;
 
               case 52:
               case "end":

@@ -10,15 +10,19 @@ class Cat extends ORM.Model {static get model_definition() {return model_definit
 //for testing defined pk
 class CatWithPk extends ORM.Model {static get model_definition() {return {...model_definitions.Cat, pk: "primary_key"};}}
 
+let catWithAttrValidationDef = JSON.parse(JSON.stringify(model_definitions.Cat)); //good ole javascript
+catWithAttrValidationDef.attributes.name = {validate: name => {return name !== "spot"}};
+class CatWithAttributeValidation extends ORM.Model {static get model_definition() {return catWithAttrValidationDef;}}
+
 ORM.registerModel(Cat);
 
 //@TODO test constructor,
 //constructing attributes,
-//applying relationships,
 //transform functions
 //validate functions
 //transforming query results,
 //debug func
+//applying relationships,
 
 describe(`Datamodel unit tests`, () => {
 	it("it returns primary key if configured", () => {
@@ -52,4 +56,3 @@ describe(`Datamodel unit tests`, () => {
 		assert.equal(Cat.attr("column_name"), 'cat.column_name');
 	});
 });
-

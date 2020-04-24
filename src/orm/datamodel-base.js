@@ -1,5 +1,6 @@
 import { getPropFromObject, isObject } from '../helpers';
 import { BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH, BELONGS_TO_THROUGH, HAS_ONE_THROUGH } from './constants';
+import { MissingRequiredAttributeError, InvalidAttributeError, InavlidInstanceError } from './errors';
 
 /**
  * Base class that other data models will extend
@@ -51,16 +52,16 @@ export default class DataModelBase {
 			let isRequired = getPropFromObject('required', def.attributes[thisKey]);
 			let validate = getPropFromObject('validate', def.attributes[thisKey]);
 			if (isRequired && !this[thisKey]) {
-				return Promise.reject(new Error(`${this.constructor.name} missing required attribute [${thisKey}]`));
+				throw new MissingRequiredAttributeError(this, thisKey);
 			}
 			if (typeof validate === 'function' && ! await validate(this[thisKey])) {
-				return Promise.reject(new Error(`${this.constructor.name} [${thisKey}] attribute failed validation`));
+				throw new InvalidAttributeError(this, thisKey);
 			}
 		}
 
 		//assert instance level validation
 		if (!(await this.validate())) {
-			return Promise.reject(new Error(`${this.constructor.name} failed validation`));
+			throw new InavlidInstanceError(this);
 		}
 
 		//get values for save
@@ -85,7 +86,7 @@ export default class DataModelBase {
 			return Promise.resolve(true);
 		} catch(err) {
 			this.debug(err);
-			return Promise.reject(false);
+			throw err;
 		}
 	};
 
