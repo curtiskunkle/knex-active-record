@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf build && babel src -d build",
-    "test": "rimraf build && babel src -d build && jest",
-    "sandbox": "babel-node --presets @babel/env tests/sandbox.js"
+    "build": "rm -rf build && babel src -d build",
+    "test": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/**/*.test.js",
+    "test:unit": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/unit/**/*.test.js"
   },
   "author": "",
   "license": "ISC",
@@ -22,6 +22,6 @@
     "@babel/plugin-transform-runtime": "^7.9.0",
     "@babel/preset-env": "^7.9.5",
     "@babel/runtime": "^7.9.2",
-    "jest": "^25.4.0"
+    "mocha": "^7.1.1"
   }
 }
