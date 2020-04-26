@@ -65,12 +65,7 @@ export default class DataModelBase {
 		}
 
 		//get values for save
-		let values = {};
-		attributeKeys.map(attr => {
-			if (attr != this.constructor._pk()) {
-				values[attr] = this[attr];
-			}
-		});
+		const values = getSaveValues(this);
 
 		let savePromise = inserting
 			? knex(def.table).insert(values)
@@ -79,16 +74,38 @@ export default class DataModelBase {
 		try {
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
 			if (inserting) this[this.constructor._pk()] = result[0];
-			let savedObject = await this.constructor.findByPk(this._id());
-			for(let i = 0; i < attributeKeys.length; i++) {
-				this[Object.keys(def.attributes)[i]] = savedObject[Object.keys(def.attributes)[i]];
-			}
+
 			return Promise.resolve(true);
 		} catch(err) {
 			this.debug(err);
 			throw err;
 		}
 	};
+
+	static batchCreate(modelInstances, transaction, chunk = 1000) {
+		const ORM = this.ORM;
+		let rows = [];
+		if (Array.isArray(modelInstances)) {
+			rows = modelInstances.map(instance => {
+				if (ORM.isModelInstance(instance)) {
+					return getSaveValues(instance);
+				}
+			});
+		}
+		return transaction
+			? ORM.knex.batchInsert(this._table(), rows, chunk).transacting(transaction)
+			: ORM.knex.batchInsert(this._table(), rows, chunk);
+	}
+
+	//@TODO how to pass any args from this function into the knex function
+	//(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
+	static update(fields) {
+		return this.ORM.knex(this._table()).update(fields);
+	}
+
+	static delete() {
+		return this.ORM.knex(this._table()).delete();
+	}
 
 	/**
 	 * Override to apply instance level validation function when saving
@@ -115,10 +132,12 @@ export default class DataModelBase {
 	 * @return pending Promise
 	 */
 	delete(transaction = null) {
-		const knex = this.constructor.ORM.knex;
-		const def = this.constructor.model_definition;
-		const deletion = knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).del();
+		const deletion = this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).del();
 		return transaction ? deletion.transacting(transaction) : deletion;
+	}
+
+	static query() {
+		return this.ORM.knex(this._table());
 	}
 
 	/**
@@ -126,10 +145,8 @@ export default class DataModelBase {
 	 * @return pending Promise
 	 */
 	static find() {
-		const knex = this.ORM.knex;
-		const def = this.model_definition;
-		return knex.select().column(this.getTableColumns()).from(def.table).queryContext({
-			ormtransform: transformQueryResults(def, this)
+		return this.query().column(this.getTableColumns()).queryContext({
+			ormtransform: transformQueryResults(this.model_definition, this)
 		});
 	}
 
@@ -138,12 +155,37 @@ export default class DataModelBase {
 	 * @return pending Promise
 	 */
 	static findOne() {
-		const knex = this.ORM.knex;
-		const def = this.model_definition;
-		return knex.select().limit(1).column(this.getTableColumns()).from(def.table).queryContext({
-			ormtransform: transformQueryResults(def, this),
+		return this.query().limit(1).column(this.getTableColumns()).queryContext({
+			ormtransform: transformQueryResults(this.model_definition, this),
 			returnSingleObject: true,
 		});
+	}
+
+	//@TODO how to pass any args from this function into the knex function
+	//(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
+	static count() {
+
+	}
+	static min() {
+
+	}
+	static max() {
+
+	}
+	static sum() {
+
+	}
+	static avg() {
+
+	}
+	static truncate() {
+
+	}
+
+	//@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if
+	//we can call a model function inside a union callback to get the desired result
+	union() { //? is this necessary to implement?
+
 	}
 
 	/**
@@ -151,7 +193,6 @@ export default class DataModelBase {
 	 * @return pending Promise
 	 */
 	static findByPk(id) {
-		const def = this.model_definition;
 		return this.findOne().where(this.attr(this._pk()), id);
 	}
 
@@ -375,4 +416,14 @@ function transformQueryResults(model_definition, classConstructor) {
 		});
 		return Object.values(grouped);
 	};
+}
+
+function getSaveValues(modelInstance) {
+	let values = {};
+	Object.keys(modelInstance.constructor.model_definition.attributes).map(attr => {
+		if (attr != modelInstance.constructor._pk()) {
+			values[attr] = modelInstance[attr];
+		}
+	});
+	return values;
 }

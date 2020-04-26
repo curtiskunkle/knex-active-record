@@ -56,8 +56,6 @@ var DataModelBase = /*#__PURE__*/function () {
     key: "save",
     value: function () {
       var _save = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
-        var _this = this;
-
         var transaction,
             knex,
             def,
@@ -70,10 +68,7 @@ var DataModelBase = /*#__PURE__*/function () {
             values,
             savePromise,
             result,
-            savedObject,
-            _i,
             _args = arguments;
-
         return _regenerator["default"].wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
@@ -144,62 +139,47 @@ var DataModelBase = /*#__PURE__*/function () {
 
               case 26:
                 //get values for save
-                values = {};
-                attributeKeys.map(function (attr) {
-                  if (attr != _this.constructor._pk()) {
-                    values[attr] = _this[attr];
-                  }
-                });
+                values = getSaveValues(this);
                 savePromise = inserting ? knex(def.table).insert(values) : knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
-                _context.prev = 29;
+                _context.prev = 28;
 
                 if (!transaction) {
-                  _context.next = 36;
+                  _context.next = 35;
                   break;
                 }
 
-                _context.next = 33;
+                _context.next = 32;
                 return savePromise.transacting(transaction);
 
-              case 33:
+              case 32:
                 _context.t1 = _context.sent;
-                _context.next = 39;
+                _context.next = 38;
                 break;
 
-              case 36:
-                _context.next = 38;
+              case 35:
+                _context.next = 37;
                 return savePromise;
 
-              case 38:
+              case 37:
                 _context.t1 = _context.sent;
 
-              case 39:
+              case 38:
                 result = _context.t1;
                 if (inserting) this[this.constructor._pk()] = result[0];
-                _context.next = 43;
-                return this.constructor.findByPk(this._id());
-
-              case 43:
-                savedObject = _context.sent;
-
-                for (_i = 0; _i < attributeKeys.length; _i++) {
-                  this[Object.keys(def.attributes)[_i]] = savedObject[Object.keys(def.attributes)[_i]];
-                }
-
                 return _context.abrupt("return", Promise.resolve(true));
 
-              case 48:
-                _context.prev = 48;
-                _context.t2 = _context["catch"](29);
+              case 43:
+                _context.prev = 43;
+                _context.t2 = _context["catch"](28);
                 this.debug(_context.t2);
                 throw _context.t2;
 
-              case 52:
+              case 47:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee, this, [[29, 48]]);
+        }, _callee, this, [[28, 43]]);
       }));
 
       function save() {
@@ -241,16 +221,9 @@ var DataModelBase = /*#__PURE__*/function () {
     key: "delete",
     value: function _delete() {
       var transaction = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var knex = this.constructor.ORM.knex;
-      var def = this.constructor.model_definition;
-      var deletion = knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).del();
+      var deletion = this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).del();
       return transaction ? deletion.transacting(transaction) : deletion;
     }
-    /**
-     * Query this model's table and return promise that resolves to array of instances for found rows
-     * @return pending Promise
-     */
-
   }, {
     key: "constructAttributes",
 
@@ -420,12 +393,49 @@ var DataModelBase = /*#__PURE__*/function () {
       return this.model_definition.table;
     }
   }, {
+    key: "batchCreate",
+    value: function batchCreate(modelInstances, transaction) {
+      var chunk = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1000;
+      var ORM = this.ORM;
+      var rows = [];
+
+      if (Array.isArray(modelInstances)) {
+        rows = modelInstances.map(function (instance) {
+          if (ORM.isModelInstance(instance)) {
+            return getSaveValues(instance);
+          }
+        });
+      }
+
+      return transaction ? ORM.knex.batchInsert(this._table(), rows, chunk).transacting(transaction) : ORM.knex.batchInsert(this._table(), rows, chunk);
+    } //@TODO how to pass any args from this function into the knex function
+    //(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
+
+  }, {
+    key: "update",
+    value: function update(fields) {
+      return this.ORM.knex(this._table()).update(fields);
+    }
+  }, {
+    key: "delete",
+    value: function _delete() {
+      return this.ORM.knex(this._table())["delete"]();
+    }
+  }, {
+    key: "query",
+    value: function query() {
+      return this.ORM.knex(this._table());
+    }
+    /**
+     * Query this model's table and return promise that resolves to array of instances for found rows
+     * @return pending Promise
+     */
+
+  }, {
     key: "find",
     value: function find() {
-      var knex = this.ORM.knex;
-      var def = this.model_definition;
-      return knex.select().column(this.getTableColumns()).from(def.table).queryContext({
-        ormtransform: transformQueryResults(def, this)
+      return this.query().column(this.getTableColumns()).queryContext({
+        ormtransform: transformQueryResults(this.model_definition, this)
       });
     }
     /**
@@ -436,13 +446,33 @@ var DataModelBase = /*#__PURE__*/function () {
   }, {
     key: "findOne",
     value: function findOne() {
-      var knex = this.ORM.knex;
-      var def = this.model_definition;
-      return knex.select().limit(1).column(this.getTableColumns()).from(def.table).queryContext({
-        ormtransform: transformQueryResults(def, this),
+      return this.query().limit(1).column(this.getTableColumns()).queryContext({
+        ormtransform: transformQueryResults(this.model_definition, this),
         returnSingleObject: true
       });
-    }
+    } //@TODO how to pass any args from this function into the knex function
+    //(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
+
+  }, {
+    key: "count",
+    value: function count() {}
+  }, {
+    key: "min",
+    value: function min() {}
+  }, {
+    key: "max",
+    value: function max() {}
+  }, {
+    key: "sum",
+    value: function sum() {}
+  }, {
+    key: "avg",
+    value: function avg() {}
+  }, {
+    key: "truncate",
+    value: function truncate() {} //@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if
+    //we can call a model function inside a union callback to get the desired result
+
     /**
      * Query this model's table by primary key and return promise that resolves to instance
      * @return pending Promise
@@ -451,7 +481,6 @@ var DataModelBase = /*#__PURE__*/function () {
   }, {
     key: "findByPk",
     value: function findByPk(id) {
-      var def = this.model_definition;
       return this.findOne().where(this.attr(this._pk()), id);
     }
   }, {
@@ -520,4 +549,14 @@ function transformQueryResults(model_definition, classConstructor) {
     });
     return Object.values(grouped);
   };
+}
+
+function getSaveValues(modelInstance) {
+  var values = {};
+  Object.keys(modelInstance.constructor.model_definition.attributes).map(function (attr) {
+    if (attr != modelInstance.constructor._pk()) {
+      values[attr] = modelInstance[attr];
+    }
+  });
+  return values;
 }

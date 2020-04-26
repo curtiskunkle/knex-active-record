@@ -7,6 +7,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 
+var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
+
+var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
+
 var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
 
 var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
@@ -118,8 +122,250 @@ var ORMBase = /*#__PURE__*/function () {
     value: function _debug(error) {
       console.log(error);
     }
+  }, {
+    key: "saveAll",
+    value: function () {
+      var _saveAll2 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee2(modelInstances) {
+        var _this = this;
+
+        var transaction,
+            _args2 = arguments;
+        return _regenerator["default"].wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                transaction = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : null;
+
+                if (!Array.isArray(modelInstances)) {
+                  _context2.next = 9;
+                  break;
+                }
+
+                if (!transaction) {
+                  _context2.next = 7;
+                  break;
+                }
+
+                _context2.next = 5;
+                return _saveAll(this, modelInstances, transaction);
+
+              case 5:
+                _context2.next = 9;
+                break;
+
+              case 7:
+                _context2.next = 9;
+                return this.knex.transaction( /*#__PURE__*/function () {
+                  var _ref = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee(trx) {
+                    return _regenerator["default"].wrap(function _callee$(_context) {
+                      while (1) {
+                        switch (_context.prev = _context.next) {
+                          case 0:
+                            _context.next = 2;
+                            return _saveAll(_this, modelInstances, trx);
+
+                          case 2:
+                            _context.next = 4;
+                            return trx.commit();
+
+                          case 4:
+                          case "end":
+                            return _context.stop();
+                        }
+                      }
+                    }, _callee);
+                  }));
+
+                  return function (_x2) {
+                    return _ref.apply(this, arguments);
+                  };
+                }());
+
+              case 9:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function saveAll(_x) {
+        return _saveAll2.apply(this, arguments);
+      }
+
+      return saveAll;
+    }()
+  }, {
+    key: "deleteAll",
+    value: function () {
+      var _deleteAll2 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee4(modelInstances) {
+        var _this2 = this;
+
+        var transaction,
+            _args4 = arguments;
+        return _regenerator["default"].wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                transaction = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : null;
+
+                if (!Array.isArray(modelInstances)) {
+                  _context4.next = 9;
+                  break;
+                }
+
+                if (!transaction) {
+                  _context4.next = 7;
+                  break;
+                }
+
+                _context4.next = 5;
+                return _deleteAll(this, modelInstances, transaction);
+
+              case 5:
+                _context4.next = 9;
+                break;
+
+              case 7:
+                _context4.next = 9;
+                return this.knex.transaction( /*#__PURE__*/function () {
+                  var _ref2 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee3(trx) {
+                    return _regenerator["default"].wrap(function _callee3$(_context3) {
+                      while (1) {
+                        switch (_context3.prev = _context3.next) {
+                          case 0:
+                            _context3.next = 2;
+                            return _deleteAll(_this2, modelInstances, trx);
+
+                          case 2:
+                            _context3.next = 4;
+                            return trx.commit();
+
+                          case 4:
+                          case "end":
+                            return _context3.stop();
+                        }
+                      }
+                    }, _callee3);
+                  }));
+
+                  return function (_x4) {
+                    return _ref2.apply(this, arguments);
+                  };
+                }());
+
+              case 9:
+              case "end":
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
+      }));
+
+      function deleteAll(_x3) {
+        return _deleteAll2.apply(this, arguments);
+      }
+
+      return deleteAll;
+    }()
+  }, {
+    key: "isModelInstance",
+    value: function isModelInstance(modelInstance) {
+      return (0, _helpers.isObject)(modelInstance) && modelInstance.constructor.prototype instanceof this.Model;
+    }
+  }, {
+    key: "transaction",
+    value: function transaction(callback) {
+      return this.knex.transaction(function (trx) {
+        callback(trx);
+      });
+    }
   }]);
   return ORMBase;
 }();
 
 exports["default"] = ORMBase;
+
+function _saveAll(_x5, _x6, _x7) {
+  return _saveAll3.apply(this, arguments);
+}
+
+function _saveAll3() {
+  _saveAll3 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee5(ORM, modelInstances, transaction) {
+    var i;
+    return _regenerator["default"].wrap(function _callee5$(_context5) {
+      while (1) {
+        switch (_context5.prev = _context5.next) {
+          case 0:
+            i = 0;
+
+          case 1:
+            if (!(i < modelInstances.length)) {
+              _context5.next = 8;
+              break;
+            }
+
+            if (!ORM.isModelInstance(modelInstances[i])) {
+              _context5.next = 5;
+              break;
+            }
+
+            _context5.next = 5;
+            return modelInstances[i].save(transaction);
+
+          case 5:
+            i++;
+            _context5.next = 1;
+            break;
+
+          case 8:
+          case "end":
+            return _context5.stop();
+        }
+      }
+    }, _callee5);
+  }));
+  return _saveAll3.apply(this, arguments);
+}
+
+function _deleteAll(_x8, _x9, _x10) {
+  return _deleteAll3.apply(this, arguments);
+}
+
+function _deleteAll3() {
+  _deleteAll3 = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee6(ORM, modelInstances, transaction) {
+    var i;
+    return _regenerator["default"].wrap(function _callee6$(_context6) {
+      while (1) {
+        switch (_context6.prev = _context6.next) {
+          case 0:
+            i = 0;
+
+          case 1:
+            if (!(i < modelInstances.length)) {
+              _context6.next = 8;
+              break;
+            }
+
+            if (!ORM.isModelInstance(modelInstances[i])) {
+              _context6.next = 5;
+              break;
+            }
+
+            _context6.next = 5;
+            return modelInstances[i]["delete"](transaction);
+
+          case 5:
+            i++;
+            _context6.next = 1;
+            break;
+
+          case 8:
+          case "end":
+            return _context6.stop();
+        }
+      }
+    }, _callee6);
+  }));
+  return _deleteAll3.apply(this, arguments);
+}

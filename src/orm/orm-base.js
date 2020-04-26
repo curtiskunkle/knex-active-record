@@ -87,8 +87,53 @@ export default class ORMBase {
 		console.log(error);
 	}
 
-	//@todo
-	async saveAll(transaction = null) {}
-	async deleteAll(transaction = null) {}
-	async batchInsert(transaction = null) {}
+	async saveAll(modelInstances, transaction = null) {
+		if (Array.isArray(modelInstances)) {
+			if (transaction) {
+				await _saveAll(this, modelInstances, transaction);
+			} else {
+				await this.knex.transaction(async trx => {
+					await _saveAll(this, modelInstances, trx);
+					await trx.commit();
+				});
+			}
+		}
+	}
+
+	async deleteAll(modelInstances, transaction = null) {
+		if (Array.isArray(modelInstances)) {
+			if (transaction) {
+				await _deleteAll(this, modelInstances, transaction);
+			} else {
+				await this.knex.transaction(async trx => {
+					await _deleteAll(this, modelInstances, trx);
+					await trx.commit();
+				});
+			}
+		}
+	}
+
+	isModelInstance(modelInstance) {
+		return isObject(modelInstance) && modelInstance.constructor.prototype instanceof this.Model;
+	}
+
+	transaction(callback) {
+		return this.knex.transaction(trx => {callback(trx);});
+	}
+}
+
+async function _saveAll(ORM, modelInstances, transaction) {
+	for (let i = 0; i < modelInstances.length; i++) {
+		if (ORM.isModelInstance(modelInstances[i])) {
+			await modelInstances[i].save(transaction);
+		}
+	}
+}
+
+async function _deleteAll(ORM, modelInstances, transaction) {
+	for (let i = 0; i < modelInstances.length; i++) {
+		if (ORM.isModelInstance(modelInstances[i])) {
+			await modelInstances[i].delete(transaction);
+		}
+	}
 }
