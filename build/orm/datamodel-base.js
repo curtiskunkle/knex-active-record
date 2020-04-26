@@ -140,7 +140,7 @@ var DataModelBase = /*#__PURE__*/function () {
               case 26:
                 //get values for save
                 values = getSaveValues(this);
-                savePromise = inserting ? knex(def.table).insert(values) : knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
+                savePromise = inserting ? this.constructor.query().insert(values) : this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
                 _context.prev = 28;
 
                 if (!transaction) {
@@ -224,6 +224,17 @@ var DataModelBase = /*#__PURE__*/function () {
       var deletion = this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).del();
       return transaction ? deletion.transacting(transaction) : deletion;
     }
+  }, {
+    key: "union",
+    //@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if
+    //we can call a model function inside a union callback to get the desired result
+    value: function union() {} //? is this necessary to implement?
+
+    /**
+     * Query this model's table by primary key and return promise that resolves to instance
+     * @return pending Promise
+     */
+
   }, {
     key: "constructAttributes",
 
@@ -408,13 +419,17 @@ var DataModelBase = /*#__PURE__*/function () {
       }
 
       return transaction ? ORM.knex.batchInsert(this._table(), rows, chunk).transacting(transaction) : ORM.knex.batchInsert(this._table(), rows, chunk);
-    } //@TODO how to pass any args from this function into the knex function
-    //(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
-
+    }
   }, {
     key: "update",
-    value: function update(fields) {
-      return this.ORM.knex(this._table()).update(fields);
+    value: function update() {
+      var builder = this.query();
+
+      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+        args[_key] = arguments[_key];
+      }
+
+      return builder.update.apply(builder, args);
     }
   }, {
     key: "delete",
@@ -450,34 +465,67 @@ var DataModelBase = /*#__PURE__*/function () {
         ormtransform: transformQueryResults(this.model_definition, this),
         returnSingleObject: true
       });
-    } //@TODO how to pass any args from this function into the knex function
-    //(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
-
+    }
   }, {
     key: "count",
-    value: function count() {}
+    value: function count() {
+      var builder = this.query();
+
+      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+        args[_key2] = arguments[_key2];
+      }
+
+      return builder.count.apply(builder, args);
+    }
   }, {
     key: "min",
-    value: function min() {}
+    value: function min() {
+      var builder = this.query();
+
+      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+        args[_key3] = arguments[_key3];
+      }
+
+      return builder.min.apply(builder, args);
+    }
   }, {
     key: "max",
-    value: function max() {}
+    value: function max() {
+      var builder = this.query();
+
+      for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        args[_key4] = arguments[_key4];
+      }
+
+      return builder.max.apply(builder, args);
+    }
   }, {
     key: "sum",
-    value: function sum() {}
+    value: function sum() {
+      var builder = this.query();
+
+      for (var _len5 = arguments.length, args = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+        args[_key5] = arguments[_key5];
+      }
+
+      return builder.sum.apply(builder, args);
+    }
   }, {
     key: "avg",
-    value: function avg() {}
+    value: function avg() {
+      var builder = this.query();
+
+      for (var _len6 = arguments.length, args = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+        args[_key6] = arguments[_key6];
+      }
+
+      return builder.avg.apply(builder, args);
+    }
   }, {
     key: "truncate",
-    value: function truncate() {} //@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if
-    //we can call a model function inside a union callback to get the desired result
-
-    /**
-     * Query this model's table by primary key and return promise that resolves to instance
-     * @return pending Promise
-     */
-
+    value: function truncate() {
+      return this.query().truncate();
+    }
   }, {
     key: "findByPk",
     value: function findByPk(id) {

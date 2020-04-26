@@ -68,8 +68,8 @@ export default class DataModelBase {
 		const values = getSaveValues(this);
 
 		let savePromise = inserting
-			? knex(def.table).insert(values)
-			: knex(def.table).where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
+			? this.constructor.query().insert(values)
+			: this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
 
 		try {
 			let result = transaction ? await savePromise.transacting(transaction) : await savePromise;
@@ -97,10 +97,9 @@ export default class DataModelBase {
 			: ORM.knex.batchInsert(this._table(), rows, chunk);
 	}
 
-	//@TODO how to pass any args from this function into the knex function
-	//(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
-	static update(fields) {
-		return this.ORM.knex(this._table()).update(fields);
+	static update(...args) {
+		const builder = this.query();
+		return builder.update.apply(builder, args);
 	}
 
 	static delete() {
@@ -161,25 +160,31 @@ export default class DataModelBase {
 		});
 	}
 
-	//@TODO how to pass any args from this function into the knex function
-	//(object, array, multiple params - knex supports multiple different ways of passing params to these functions)
-	static count() {
+	static count(...args) {
+		const builder = this.query();
+		return builder.count.apply(builder, args);
 
 	}
-	static min() {
+	static min(...args) {
+		const builder = this.query();
+		return builder.min.apply(builder, args);
+	}
+	static max(...args) {
+		const builder = this.query();
+		return builder.max.apply(builder, args);
 
 	}
-	static max() {
+	static sum(...args) {
+		const builder = this.query();
+		return builder.sum.apply(builder, args);
 
 	}
-	static sum() {
-
-	}
-	static avg() {
-
+	static avg(...args) {
+		const builder = this.query();
+		return builder.avg.apply(builder, args);
 	}
 	static truncate() {
-
+		return this.query().truncate();
 	}
 
 	//@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if

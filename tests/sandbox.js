@@ -14,7 +14,7 @@ class Tag extends ORM.Model {static get model_definition() {return model_definit
 
 
 let cats = [];
-for(let i = 0; i < 2000; i++) {
+for(let i = 0; i < 200; i++) {
 	let cat = new Cat();
 	cat.name = "cat" + i;
 	cats.push(cat);
@@ -22,10 +22,8 @@ for(let i = 0; i < 2000; i++) {
 
 async function runTest() {
 	await initDB(ORM);
-	await ORM.transaction(async trx => {
-		console.log(await Cat.batchCreate(cats, trx));
-
-	});
+	await Cat.batchCreate(cats);
+	console.log(await Cat.max('id', {as: 'saf'}));
 	process.exit();
 }
 
