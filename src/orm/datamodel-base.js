@@ -67,6 +67,11 @@ export default class DataModelBase {
 		//get values for save
 		const values = getSaveValues(this);
 
+		//if updating a record with all undefined attributes, return promise here to avoid error.
+		if (this._id() && Object.values(values).every(val => val === undefined)) {
+			return Promise.resolve(true);
+		}
+
 		let savePromise = inserting
 			? this.constructor.query().insert(values)
 			: this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
@@ -131,6 +136,7 @@ export default class DataModelBase {
 	 * @return pending Promise
 	 */
 	delete(transaction = null) {
+		if (!this._id()) return Promise.resolve(0);
 		const deletion = this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).del();
 		return transaction ? deletion.transacting(transaction) : deletion;
 	}

@@ -139,47 +139,58 @@ var DataModelBase = /*#__PURE__*/function () {
 
               case 26:
                 //get values for save
-                values = getSaveValues(this);
-                savePromise = inserting ? this.constructor.query().insert(values) : this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
-                _context.prev = 28;
+                values = getSaveValues(this); //if updating a record with all undefined attributes, return promise here to avoid error.
 
-                if (!transaction) {
-                  _context.next = 35;
+                if (!(this._id() && Object.values(values).every(function (val) {
+                  return val === undefined;
+                }))) {
+                  _context.next = 29;
                   break;
                 }
 
-                _context.next = 32;
+                return _context.abrupt("return", Promise.resolve(true));
+
+              case 29:
+                savePromise = inserting ? this.constructor.query().insert(values) : this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).update(values);
+                _context.prev = 30;
+
+                if (!transaction) {
+                  _context.next = 37;
+                  break;
+                }
+
+                _context.next = 34;
                 return savePromise.transacting(transaction);
 
-              case 32:
+              case 34:
                 _context.t1 = _context.sent;
-                _context.next = 38;
+                _context.next = 40;
                 break;
 
-              case 35:
-                _context.next = 37;
+              case 37:
+                _context.next = 39;
                 return savePromise;
 
-              case 37:
+              case 39:
                 _context.t1 = _context.sent;
 
-              case 38:
+              case 40:
                 result = _context.t1;
                 if (inserting) this[this.constructor._pk()] = result[0];
                 return _context.abrupt("return", Promise.resolve(true));
 
-              case 43:
-                _context.prev = 43;
-                _context.t2 = _context["catch"](28);
+              case 45:
+                _context.prev = 45;
+                _context.t2 = _context["catch"](30);
                 this.debug(_context.t2);
                 throw _context.t2;
 
-              case 47:
+              case 49:
               case "end":
                 return _context.stop();
             }
           }
-        }, _callee, this, [[28, 43]]);
+        }, _callee, this, [[30, 45]]);
       }));
 
       function save() {
@@ -221,6 +232,7 @@ var DataModelBase = /*#__PURE__*/function () {
     key: "delete",
     value: function _delete() {
       var transaction = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      if (!this._id()) return Promise.resolve(0);
       var deletion = this.constructor.query().where(this.constructor.attr(this.constructor._pk()), this._id()).del();
       return transaction ? deletion.transacting(transaction) : deletion;
     }

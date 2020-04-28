@@ -12,7 +12,6 @@ class Leash extends ORM.Model {static get model_definition() {return model_defin
 class PetOwner extends ORM.Model {static get model_definition() {return model_definitions.PetOwner;}}
 class Tag extends ORM.Model {static get model_definition() {return model_definitions.Tag;}}
 
-
 let cats = [];
 for(let i = 0; i < 200; i++) {
 	let cat = new Cat();
@@ -21,10 +20,19 @@ for(let i = 0; i < 200; i++) {
 }
 
 async function runTest() {
-	await initDB(ORM);
-	await Cat.batchCreate(cats);
-	console.log(await Cat.max('id', {as: 'saf'}));
+	// await initDB(ORM);
+	// await Cat.batchCreate(cats);
+	// console.log(await Cat.count().groupBy('id'))
+	let cat = new Cat();
+	await cat.save();
+	await cat.save();
 	process.exit();
 }
 
+try {
 runTest();
+}catch(err) {
+	console.log(err);
+	process.exit();
+}
+
