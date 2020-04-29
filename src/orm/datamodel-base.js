@@ -284,6 +284,7 @@ export default class DataModelBase {
 	_belongsTo(model, key) {
 		const ORM = this.constructor.ORM;
 		const modelClass = ORM.modelRegistry[model];
+		if (!this[key]) return Promise.resolve(null);
 		if (!modelClass) {
 			this.debug("Invalid model provided for belongsTo relationship");
 			return Promise.resolve(null);

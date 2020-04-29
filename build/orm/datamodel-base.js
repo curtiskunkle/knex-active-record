@@ -318,6 +318,7 @@ var DataModelBase = /*#__PURE__*/function () {
     value: function _belongsTo(model, key) {
       var ORM = this.constructor.ORM;
       var modelClass = ORM.modelRegistry[model];
+      if (!this[key]) return Promise.resolve(null);
 
       if (!modelClass) {
         this.debug("Invalid model provided for belongsTo relationship");

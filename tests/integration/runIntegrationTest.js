@@ -1,7 +1,7 @@
 import model_definitions from "../model_defintions";
 import initORM from '../../build';
 import assert from 'assert';
-import { initDB } from '../provide';
+import { initDB, populateDB } from '../provide';
 
 export default async connectionConfig => {
 	let ORM = initORM(connectionConfig);
@@ -231,10 +231,97 @@ export default async connectionConfig => {
 			assert.equal((await Cat.findByPk(200)).name, "fez");
 		});
 
+		it("it static deletes", async () => {
+			await initDB(ORM);
+			let cats = [];
+			for(let i = 0; i < 200; i++) {
+				let cat = new Cat();
+				cat.name = "cat" + i;
+				cats.push(cat);
+			}
+			await Cat.batchCreate(cats);
+			await Cat.delete().where('id', '>', 100);
+			assert.equal((await Cat.count({count: "id"}))[0].count, 100);
+			assert.equal((await Cat.max({max: "id"}))[0].max, 100);
+		});
 
+		it("it static updates", async () => {
+			await initDB(ORM);
+			let cats = [];
+			for(let i = 0; i < 200; i++) {
+				let cat = new Cat();
+				cat.name = "cat" + i;
+				cats.push(cat);
+			}
+			await Cat.batchCreate(cats);
+			await Cat.update({name: "spot"}).where('id', '>', 100);
+			assert.equal((await Cat.count({count: "id"}).where({name:"spot"}))[0].count, 100);
+			assert.equal((await Cat.min({min: "id"}).where({name: "spot"}))[0].min, 101);
+		});
 
-		//@TODO static delete, static update
-		//@TODO test fetching relationships
+		it("it fetches hasMany relationship", async () => {
+			await initDB(ORM);
+			await populateDB(ORM);
+			let cats1 = await (await PetOwner.findByPk(1)).cats();
+			let cats2 = await (await PetOwner.findByPk(2)).cats();
+			let cats3 = await (await PetOwner.findByPk(3)).cats();
+
+			//make sure all the cats have been fetched
+			assert.equal(cats1.length, 3);
+			assert.equal(cats2.length, 1);
+			assert.equal(cats3.length, 2);
+
+			//make sure each owner has the right cats
+			assert.equal(Object.values(cats1).map(cat => cat.pet_owner_id).every(id => id === 1), true);
+			assert.equal(Object.values(cats2).map(cat => cat.pet_owner_id).every(id => id === 2), true);
+			assert.equal(Object.values(cats3).map(cat => cat.pet_owner_id).every(id => id === 3), true);
+
+			//also test fetching hasMany relationship when has none
+			//sorry felix :-(
+			let felix = await Cat.findOne().where({name: 'felix'});
+			let toys = await felix.catToys();
+			assert.equal(Array.isArray(toys), true);
+			assert.equal(toys.length, 0);
+		});
+
+		it("it fetches belongsTo relationship", async () => {
+			await initDB(ORM);
+			await populateDB(ORM);
+			let cats = await Cat.find();
+			for (let i = 0; i < cats.length; i++) {
+				let cat = cats[i];
+				assert.equal(cat.pet_owner_id, (await cat.owner())._id());
+			}
+
+			//test when foreign record does not exist
+			let aCat = new Cat();
+			aCat.pet_owner_id = 123456; //not a real pet owner
+			await aCat.save();
+			let owner = await aCat.owner();
+			assert.equal(owner, null);
+
+			//test when not related
+			let wildCat = new Cat();
+			await wildCat.save();
+			let wildCatOwner = await wildCat.owner();
+			assert.equal(wildCatOwner, null);
+		});
+
+		it("it fetches hasOne relationship", async () => {
+			await initDB(ORM);
+			await populateDB(ORM);
+			let cats = await Cat.find();
+			for (let i = 0; i < cats.length; i++) {
+				let cat = cats[i];
+				assert.equal(cat._id(), (await cat.collar())._id());
+			}
+
+			let aCatWithNoCollar = new Cat();
+			await aCatWithNoCollar.save();
+			assert.equal(await aCatWithNoCollar.collar(), null);
+		});
+
+		//@TODO test fetching through relationships
 		//@todo test transactions on all write methods
 
 		//@todo drop schema

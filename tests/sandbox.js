@@ -1,7 +1,7 @@
 import model_definitions from "./model_defintions";
 import initORM from '../src';
 import assert from 'assert';
-import { initDB } from './provide';
+import { initDB, populateDB } from './provide';
 import conns from './connections.js';
 
 const ORM = initORM(conns.mysql2);
@@ -12,6 +12,13 @@ class Leash extends ORM.Model {static get model_definition() {return model_defin
 class PetOwner extends ORM.Model {static get model_definition() {return model_definitions.PetOwner;}}
 class Tag extends ORM.Model {static get model_definition() {return model_definitions.Tag;}}
 
+ORM.registerModel(Cat);
+ORM.registerModel(CatToy);
+ORM.registerModel(Collar);
+ORM.registerModel(Leash);
+ORM.registerModel(PetOwner);
+ORM.registerModel(Tag);
+
 let cats = [];
 for(let i = 0; i < 200; i++) {
 	let cat = new Cat();
@@ -20,12 +27,8 @@ for(let i = 0; i < 200; i++) {
 }
 
 async function runTest() {
-	// await initDB(ORM);
-	// await Cat.batchCreate(cats);
-	// console.log(await Cat.count().groupBy('id'))
-	let cat = new Cat();
-	await cat.save();
-	await cat.save();
+	await initDB(ORM);
+	await populateDB(ORM);
 	process.exit();
 }
 
