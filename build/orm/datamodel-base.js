@@ -308,7 +308,7 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (!modelClass) {
         this.debug("Invalid model provided for hasMany relationship");
-        return Promise.resolve([]);
+        return modelClass.find().where(false);
       }
 
       return modelClass.find().where(modelClass.attr(key), this._id());
@@ -318,11 +318,11 @@ var DataModelBase = /*#__PURE__*/function () {
     value: function _belongsTo(model, key) {
       var ORM = this.constructor.ORM;
       var modelClass = ORM.modelRegistry[model];
-      if (!this[key]) return Promise.resolve(null);
+      if (!this[key]) return modelClass.findByPk(null);
 
       if (!modelClass) {
         this.debug("Invalid model provided for belongsTo relationship");
-        return Promise.resolve(null);
+        return modelClass.findByPk(null);
       }
 
       return modelClass.findByPk(this[key]);
@@ -335,7 +335,7 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (!modelClass) {
         this.debug("Invalid model provided for belongsTo relationship");
-        return Promise.resolve(null);
+        return modelClass.findOne().where(false);
       }
 
       return modelClass.findOne().where(modelClass.attr(key), this._id());
@@ -354,7 +354,9 @@ var DataModelBase = /*#__PURE__*/function () {
       var validCombinations = ["".concat(_constants.HAS_MANY, "-").concat(_constants.HAS_MANY), "".concat(_constants.HAS_ONE, "-").concat(_constants.HAS_MANY), "".concat(_constants.HAS_MANY, "-").concat(_constants.HAS_ONE)];
 
       if (validCombinations.indexOf(data.relationshipCombination) === -1) {
-        this.debug("Invalid relationship combination for hasManyThrough ".concat(relationshipCombination));
+        this.debug("Invalid relationship combination for hasManyThrough ".concat(relationshipCombination)); //@TODO should we resolve here? should keep this open for chaining.
+        //maybe just let it throw an error when the query is invalid?
+
         return Promise.resolve([]);
       }
 

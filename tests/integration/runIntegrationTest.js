@@ -321,7 +321,90 @@ export default async connectionConfig => {
 			assert.equal(await aCatWithNoCollar.collar(), null);
 		});
 
+		it("it fetches hasManyThrough relationship (hasMany - hasMany)", async () => {
+			await initDB(ORM);
+			await populateDB(ORM);
+			const owner1 = await PetOwner.findByPk(1);
+			const catIds1 = (await owner1.cats()).map(cat => cat.id);
+			const catToys1 = await owner1.catToys();
+			const owner2 = await PetOwner.findByPk(2);
+			const catIds2 = (await owner2.cats()).map(cat => cat.id);
+			const catToys2 = await owner2.catToys();
+			const owner3 = await PetOwner.findByPk(3);
+			const catIds3 = (await owner3.cats()).map(cat => cat.id);
+			const catToys3 = await owner3.catToys();
+			for (let i = 0; i < catToys1.length; i++) {assert.notEqual(catIds1.indexOf(catToys1[i].cat_id), -1)}
+			for (let i = 0; i < catToys2.length; i++) {assert.notEqual(catIds2.indexOf(catToys2[i].cat_id), -1)}
+			for (let i = 0; i < catToys3.length; i++) {assert.notEqual(catIds3.indexOf(catToys3[i].cat_id), -1)}
+
+			let toys;
+
+			let anotherOwner = new PetOwner();
+			await anotherOwner.save();
+			toys = await anotherOwner.catToys();
+			assert.equal(Array.isArray(toys), true);
+			assert.equal(toys.length, 0);
+
+			let anotherCat = new Cat();
+			anotherCat.pet_owner_id = anotherOwner._id();
+			await anotherCat.save();
+			toys = await anotherOwner.catToys();
+			assert.equal(Array.isArray(toys), true);
+			assert.equal(toys.length, 0);
+
+			let anotherToy = new CatToy();
+			anotherToy.cat_id = anotherCat._id();
+			await anotherToy.save();
+			toys = await anotherOwner.catToys();
+			assert.equal(toys.length, 1);
+			assert.equal(toys[0]._id(), anotherToy._id());
+		});
+
+		it("it fetches hasManyThrough relationship (hasOne - hasMany)", async () => {
+			await initDB(ORM);
+			await populateDB(ORM);
+			const cats = await Cat.find();
+
+			for (let i = 0; i < cats.length; i++) {
+				let collarId = (await cats[i].collar())._id();
+				let tags = await cats[i].tags();
+				for(let j = 0; j < tags.length; j++) {
+					assert.equal(tags[j].collar_id, collarId);
+				}
+			}
+
+			let anotherCat = new Cat();
+			await anotherCat.save();
+			let tags = await anotherCat.tags();
+			assert.equal(Array.isArray(tags), true);
+			assert.equal(tags.length, 0);
+
+			let collar = new Collar();
+			collar.cat_id = anotherCat._id();
+			await collar.save();
+			let tag = new Tag();
+			tag.collar_id = collar._id();
+			await tag.save();
+			tags = await anotherCat.tags();
+			assert.equal(tags.length, 1);
+			assert.equal(tags[0]._id(), tag._id());
+		});
+
+		it("it fetches hasManyThrough relationship (hasMany - hasOne)", async () => {
+			throw new Error('to do');
+		});
+
+		it("it fetches hasOneThrough relationship", async () => {
+			throw new Error('to do');
+		});
+
+		it("it fetches belongsToThrough relationship", async () => {
+			throw new Error('to do');
+		});
+
 		//@TODO test fetching through relationships
+		//@TODO test filtering relationship (has many and has many through) with where clause
+		//@TODO test for each error case for fetching relationships
 		//@todo test transactions on all write methods
 
 		//@todo drop schema

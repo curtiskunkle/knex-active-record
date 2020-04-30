@@ -19,16 +19,11 @@ ORM.registerModel(Leash);
 ORM.registerModel(PetOwner);
 ORM.registerModel(Tag);
 
-let cats = [];
-for(let i = 0; i < 200; i++) {
-	let cat = new Cat();
-	cat.name = "cat" + i;
-	cats.push(cat);
-}
-
 async function runTest() {
 	await initDB(ORM);
 	await populateDB(ORM);
+	let cat = await Cat.findOne();
+	console.log(await cat.catToys());
 	process.exit();
 }
 
