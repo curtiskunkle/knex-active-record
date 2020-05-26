@@ -31,8 +31,6 @@ export default async connectionConfig => {
 			await ORM.knex.raw('select 1 + 1 as result');
 		});
 
-		// @todo create schema
-
 		it("it initializes DB", async () => {
 			await initDB(ORM);
 		});
@@ -426,12 +424,6 @@ export default async connectionConfig => {
 				assert.equal(cat.pet_owner_id, owner._id());
 			}
 		});
-
-		//@TODO test filtering relationship (has many and has many through) with where clause
-		//@TODO test for each error case for fetching relationships
-		//@todo test transactions on all write methods
-
-		//@todo drop schema
 
 		//necessary because the test will hang if the connection is left open
 		it("closing connection...", async () => {
