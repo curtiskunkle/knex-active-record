@@ -37,7 +37,7 @@ var ORMBase = /*#__PURE__*/function () {
   (0, _createClass2["default"])(ORMBase, [{
     key: "init",
     value: function init(config) {
-      this.knex = require('knex')(_objectSpread({}, config, {
+      this.knex = require('knex')(_objectSpread(_objectSpread({}, config), {}, {
         postProcessResponse: this.processResponse
       }));
     }

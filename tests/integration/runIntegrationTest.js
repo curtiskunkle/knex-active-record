@@ -391,18 +391,42 @@ export default async connectionConfig => {
 		});
 
 		it("it fetches hasManyThrough relationship (hasMany - hasOne)", async () => {
-			throw new Error('to do');
+			await initDB(ORM);
+			await populateDB(ORM);
+			
+			const owner = await PetOwner.findOne();
+			const collars = await owner.collars();
+			assert.equal(collars.length, 3);
+			for (let i = 0; i < collars.length; i++) {
+				const cat = await collars[i].cat();
+				assert.equal(cat.pet_owner_id, owner._id());
+			}
 		});
 
 		it("it fetches hasOneThrough relationship", async () => {
-			throw new Error('to do');
+			await initDB(ORM);
+			await populateDB(ORM);
+
+			const cats = await Cat.find();
+			for(let i = 0; i < cats.length; i++) {
+				const leash = await cats[i].leash();
+				const collar = await leash.collar();
+				assert.equal(collar.cat_id, cats[i]._id());
+			}
 		});
 
 		it("it fetches belongsToThrough relationship", async () => {
-			throw new Error('to do');
+			await initDB(ORM);
+			await populateDB(ORM);
+
+			const collars = await Collar.find();
+			for(let i = 0; i < collars.length; i++) {
+				const cat = await collars[i].cat();
+				const owner = await collars[i].owner();
+				assert.equal(cat.pet_owner_id, owner._id());
+			}
 		});
 
-		//@TODO test fetching through relationships
 		//@TODO test filtering relationship (has many and has many through) with where clause
 		//@TODO test for each error case for fetching relationships
 		//@todo test transactions on all write methods

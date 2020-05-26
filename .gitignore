@@ -4,3 +4,4 @@ package-lock.json
 file-cache.json
 tests/connections.js
 test-build
+tests/connections.js

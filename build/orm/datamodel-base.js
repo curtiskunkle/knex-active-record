@@ -347,15 +347,15 @@ var DataModelBase = /*#__PURE__*/function () {
       var data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 
       if (typeof data === 'string') {
-        this.debug(data);
+        this.debug(data); //@TODO return a builder that will end up returning empty array
+
         return Promise.resolve([]);
       }
 
       var validCombinations = ["".concat(_constants.HAS_MANY, "-").concat(_constants.HAS_MANY), "".concat(_constants.HAS_ONE, "-").concat(_constants.HAS_MANY), "".concat(_constants.HAS_MANY, "-").concat(_constants.HAS_ONE)];
 
       if (validCombinations.indexOf(data.relationshipCombination) === -1) {
-        this.debug("Invalid relationship combination for hasManyThrough ".concat(relationshipCombination)); //@TODO should we resolve here? should keep this open for chaining.
-        //maybe just let it throw an error when the query is invalid?
+        this.debug("Invalid relationship combination for hasManyThrough ".concat(relationshipCombination)); //@TODO return a builder that will end up returning empty array
 
         return Promise.resolve([]);
       }
