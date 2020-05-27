@@ -3,4 +3,5 @@ package-lock.json
 .DS_Store
 file-cache.json
 tests/connections.js
+tests/sandbox.js
 test-build
