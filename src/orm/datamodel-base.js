@@ -193,12 +193,6 @@ export default class DataModelBase {
 		return this.query().truncate();
 	}
 
-	//@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if
-	//we can call a model function inside a union callback to get the desired result
-	union() { //? is this necessary to implement?
-
-	}
-
 	/**
 	 * Query this model's table by primary key and return promise that resolves to instance
 	 * @return pending Promise
@@ -395,6 +389,18 @@ export default class DataModelBase {
 
 	debug(message) {
 		this.constructor.debug(message);
+	}
+
+	_getValues() {
+		let values = {};
+		Object.keys(this.constructor.model_definition.attributes).map(key => {
+			values[key] = this[key];
+		});
+		return values;
+	}
+
+	toJSON() {
+		return this._getValues();
 	}
 }
 
