@@ -270,7 +270,7 @@ export default class DataModelBase {
 		const modelClass = ORM.modelRegistry[model];
 		if (!modelClass) {
 			this.debug("Invalid model provided for hasMany relationship");
-			return modelClass.find().where(false);
+			return this.constructor.query().where(false);
 		}
 		return modelClass.find().where(modelClass.attr(key), this._id());
 	}
@@ -281,7 +281,7 @@ export default class DataModelBase {
 		if (!this[key]) return modelClass.findByPk(null);
 		if (!modelClass) {
 			this.debug("Invalid model provided for belongsTo relationship");
-			return modelClass.findByPk(null);
+			return this.constructor.findByPk(null);
 		}
 		return modelClass.findByPk(this[key]);
 	}
@@ -292,7 +292,7 @@ export default class DataModelBase {
 		const modelClass = ORM.modelRegistry[model];
 		if (!modelClass) {
 			this.debug("Invalid model provided for belongsTo relationship");
-			return modelClass.findOne().where(false);
+			return this.constructor.findOne().where(false);
 		}
 
 		return modelClass.findOne().where(modelClass.attr(key), this._id());
@@ -303,14 +303,12 @@ export default class DataModelBase {
 		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 		if (typeof data === 'string') {
 			this.debug(data);
-			//@TODO return a builder that will end up returning empty array
-			return Promise.resolve([]);
+			return this.constructor.find().where(false);
 		}
 		const validCombinations = [`${HAS_MANY}-${HAS_MANY}`, `${HAS_ONE}-${HAS_MANY}`, `${HAS_MANY}-${HAS_ONE}`];
 		if (validCombinations.indexOf(data.relationshipCombination) === -1) {
-			this.debug(`Invalid relationship combination for hasManyThrough ${relationshipCombination}`);
-			//@TODO return a builder that will end up returning empty array
-			return Promise.resolve([]);
+			this.debug(`Invalid relationship combination for hasManyThrough ${data.relationshipCombination}`);
+			return this.constructor.find().where(false);
 		}
 	    return data.targetModel.find()
 		.join(
@@ -333,11 +331,11 @@ export default class DataModelBase {
 		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 		if (typeof data === 'string') {
 			this.debug(data);
-			return Promise.resolve([]);
+			return this.constructor.findOne().where(false);
 		}
 		if (data.relationshipCombination !== `${HAS_ONE}-${HAS_ONE}`) {
-			this.debug(`Invalid relationship combination for hasOneThrough ${relationshipCombination}`);
-			return Promise.resolve([]);
+			this.debug(`Invalid relationship combination for hasOneThrough ${data.relationshipCombination}`);
+			return this.constructor.findOne().where(false);
 		}
 	    return data.targetModel.findOne()
 		.join(
@@ -360,12 +358,12 @@ export default class DataModelBase {
 		const data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 		if (typeof data === 'string') {
 			this.debug(data);
-			return Promise.resolve(null);
+			return this.constructor.findOne().where(false);
 		}
 
 		if (data.relationshipCombination !== `${BELONGS_TO}-${BELONGS_TO}`) {
-			this.debug(`Invalid relationship combination for belongsToThrough ${relationshipCombination}`);
-			return Promise.resolve(null);
+			this.debug(`Invalid relationship combination for belongsToThrough ${data.relationshipCombination}`);
+			return this.constructor.findOne().where(false);
 		}
     	return data.targetModel.findOne()
 		.join(

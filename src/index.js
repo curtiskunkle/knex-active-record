@@ -1,8 +1,8 @@
-import ORMBase from './orm/orm-base';
+import Store from './orm/orm-base';
 import DataModelBase from './orm/datamodel-base'
 
-const initORM = config => {
-    const initializedOrm = new ORMBase(config);
+const CreateStore = config => {
+    const initializedOrm = new Store(config);
     class Model extends DataModelBase {
     	static get ORM() {
     		return initializedOrm;
@@ -11,4 +11,4 @@ const initORM = config => {
     initializedOrm.Model = Model;
     return initializedOrm;
 }
-export default initORM;
+export default CreateStore;

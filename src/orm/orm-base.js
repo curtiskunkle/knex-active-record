@@ -1,7 +1,7 @@
 import { isObject } from '../helpers';
 import { BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH } from './constants';
 
-export default class ORMBase {
+export default class Store {
 
 	constructor(config) {
 		this.modelRegistry = {};
