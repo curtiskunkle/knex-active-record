@@ -10,13 +10,25 @@ export default class Store {
 		this.init(config);
 	}
 
+	/**
+	 * If knex function provided, manually modify the postProcessResponse function (kind of sketchy)
+	 * If connection config provided, instantiate knex and set postProcessResponse here (per documentation)
+	 */
 	init (config) {
-		this.knex = require('knex')({
-			...config,
-		  	postProcessResponse: this.processResponse
-		});
+		if (typeof config === 'function' && config.name === "knex") {
+			config.client.config.postProcessResponse = this.processResponse;
+			this.knex = config;
+		} else {
+			this.knex = require('knex')({
+				...config,
+			  	postProcessResponse: this.processResponse
+			});
+		}
 	}
 
+	/**
+	 * Does the mapping of results to data model instances
+	 */
 	processResponse(result, queryContext) {
   		if (isObject(queryContext) && typeof queryContext.ormtransform === 'function') {
   			const transformed = queryContext.ormtransform(result);

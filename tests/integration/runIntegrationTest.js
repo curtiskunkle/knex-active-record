@@ -3,8 +3,7 @@ import initORM from '../../build';
 import assert from 'assert';
 import { initDB, populateDB } from '../provide';
 
-export default async connectionConfig => {
-	let ORM = initORM(connectionConfig);
+export default async ORM => {
 	class Cat extends ORM.Model {static get model_definition() {return model_definitions.Cat;}}
 	class CatToy extends ORM.Model {static get model_definition() {return model_definitions.CatToy;}}
 	class Collar extends ORM.Model {static get model_definition() {return model_definitions.Collar;}}
@@ -24,8 +23,7 @@ export default async connectionConfig => {
 	].map(modelClass => {
 		ORM.registerModel(modelClass);
 	})
-
-	describe(`Integration test ${connectionConfig.client}`, () => {
+	describe(`Integration test ${ORM.knex.context.client.config.client}`, () => {
 
 		it("testing connection...", async () => {
 			await ORM.knex.raw('select 1 + 1 as result');
@@ -423,6 +421,13 @@ export default async connectionConfig => {
 				const owner = await collars[i].owner();
 				assert.equal(cat.pet_owner_id, owner._id());
 			}
+		});
+
+		it("it returns model instance", async () => {
+			await initDB(ORM);
+			await populateDB(ORM);
+			const cat = await Cat.findOne();
+			assert.equal(cat.constructor.name, "Cat");
 		});
 
 		//necessary because the test will hang if the connection is left open

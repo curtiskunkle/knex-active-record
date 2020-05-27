@@ -33,14 +33,28 @@ var Store = /*#__PURE__*/function () {
     this.debugMode = false;
     this.init(config);
   }
+  /**
+   * If knex function provided, manually modify the postProcessResponse function (kind of sketchy)
+   * If connection config provided, instantiate knex and set postProcessResponse here (per documentation)
+   */
+
 
   (0, _createClass2["default"])(Store, [{
     key: "init",
     value: function init(config) {
-      this.knex = require('knex')(_objectSpread(_objectSpread({}, config), {}, {
-        postProcessResponse: this.processResponse
-      }));
+      if (typeof config === 'function' && config.name === "knex") {
+        config.client.config.postProcessResponse = this.processResponse;
+        this.knex = config;
+      } else {
+        this.knex = require('knex')(_objectSpread(_objectSpread({}, config), {}, {
+          postProcessResponse: this.processResponse
+        }));
+      }
     }
+    /**
+     * Does the mapping of results to data model instances
+     */
+
   }, {
     key: "processResponse",
     value: function processResponse(result, queryContext) {
