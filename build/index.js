@@ -25,7 +25,7 @@ function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflec
 
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
 
-var initORM = function initORM(config) {
+var CreateStore = function CreateStore(config) {
   var initializedOrm = new _ormBase["default"](config);
 
   var Model = /*#__PURE__*/function (_DataModelBase) {
@@ -51,5 +51,5 @@ var initORM = function initORM(config) {
   return initializedOrm;
 };
 
-var _default = initORM;
+var _default = CreateStore;
 exports["default"] = _default;

@@ -25,16 +25,16 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
-var ORMBase = /*#__PURE__*/function () {
-  function ORMBase(config) {
-    (0, _classCallCheck2["default"])(this, ORMBase);
+var Store = /*#__PURE__*/function () {
+  function Store(config) {
+    (0, _classCallCheck2["default"])(this, Store);
     this.modelRegistry = {};
     this.knex = null;
     this.debugMode = false;
     this.init(config);
   }
 
-  (0, _createClass2["default"])(ORMBase, [{
+  (0, _createClass2["default"])(Store, [{
     key: "init",
     value: function init(config) {
       this.knex = require('knex')(_objectSpread(_objectSpread({}, config), {}, {
@@ -281,10 +281,10 @@ var ORMBase = /*#__PURE__*/function () {
       });
     }
   }]);
-  return ORMBase;
+  return Store;
 }();
 
-exports["default"] = ORMBase;
+exports["default"] = Store;
 
 function _saveAll(_x5, _x6, _x7) {
   return _saveAll3.apply(this, arguments);

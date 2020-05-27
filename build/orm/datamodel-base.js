@@ -237,17 +237,6 @@ var DataModelBase = /*#__PURE__*/function () {
       return transaction ? deletion.transacting(transaction) : deletion;
     }
   }, {
-    key: "union",
-    //@TODO figure out how to union, or does this just get offloaded to knex?  need to test to see if
-    //we can call a model function inside a union callback to get the desired result
-    value: function union() {} //? is this necessary to implement?
-
-    /**
-     * Query this model's table by primary key and return promise that resolves to instance
-     * @return pending Promise
-     */
-
-  }, {
     key: "constructAttributes",
 
     /**
@@ -308,7 +297,7 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (!modelClass) {
         this.debug("Invalid model provided for hasMany relationship");
-        return modelClass.find().where(false);
+        return this.constructor.query().where(false);
       }
 
       return modelClass.find().where(modelClass.attr(key), this._id());
@@ -322,7 +311,7 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (!modelClass) {
         this.debug("Invalid model provided for belongsTo relationship");
-        return modelClass.findByPk(null);
+        return this.constructor.findByPk(null);
       }
 
       return modelClass.findByPk(this[key]);
@@ -335,7 +324,7 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (!modelClass) {
         this.debug("Invalid model provided for belongsTo relationship");
-        return modelClass.findOne().where(false);
+        return this.constructor.findOne().where(false);
       }
 
       return modelClass.findOne().where(modelClass.attr(key), this._id());
@@ -347,17 +336,15 @@ var DataModelBase = /*#__PURE__*/function () {
       var data = ORM.getThroughRelationshipData(this.constructor.name, throughRelation, targetRelation);
 
       if (typeof data === 'string') {
-        this.debug(data); //@TODO return a builder that will end up returning empty array
-
-        return Promise.resolve([]);
+        this.debug(data);
+        return this.constructor.find().where(false);
       }
 
       var validCombinations = ["".concat(_constants.HAS_MANY, "-").concat(_constants.HAS_MANY), "".concat(_constants.HAS_ONE, "-").concat(_constants.HAS_MANY), "".concat(_constants.HAS_MANY, "-").concat(_constants.HAS_ONE)];
 
       if (validCombinations.indexOf(data.relationshipCombination) === -1) {
-        this.debug("Invalid relationship combination for hasManyThrough ".concat(relationshipCombination)); //@TODO return a builder that will end up returning empty array
-
-        return Promise.resolve([]);
+        this.debug("Invalid relationship combination for hasManyThrough ".concat(data.relationshipCombination));
+        return this.constructor.find().where(false);
       }
 
       return data.targetModel.find().join(data.throughModel._table(), data.throughModel.attr(data.throughModel._pk()), '=', data.targetModel.attr(data.targetKey)).join(this.constructor._table(), this.constructor.attr(this.constructor._pk()), '=', data.throughModel.attr(data.throughKey)).where(this.constructor.attr(this.constructor._pk()), this._id());
@@ -370,12 +357,12 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (typeof data === 'string') {
         this.debug(data);
-        return Promise.resolve([]);
+        return this.constructor.findOne().where(false);
       }
 
       if (data.relationshipCombination !== "".concat(_constants.HAS_ONE, "-").concat(_constants.HAS_ONE)) {
-        this.debug("Invalid relationship combination for hasOneThrough ".concat(relationshipCombination));
-        return Promise.resolve([]);
+        this.debug("Invalid relationship combination for hasOneThrough ".concat(data.relationshipCombination));
+        return this.constructor.findOne().where(false);
       }
 
       return data.targetModel.findOne().join(data.throughModel._table(), data.throughModel.attr(data.throughModel._pk()), '=', data.targetModel.attr(data.targetKey)).join(this.constructor._table(), this.constructor.attr(this.constructor._pk()), '=', data.throughModel.attr(data.throughKey)).where(this.constructor.attr(this.constructor._pk()), this._id());
@@ -388,12 +375,12 @@ var DataModelBase = /*#__PURE__*/function () {
 
       if (typeof data === 'string') {
         this.debug(data);
-        return Promise.resolve(null);
+        return this.constructor.findOne().where(false);
       }
 
       if (data.relationshipCombination !== "".concat(_constants.BELONGS_TO, "-").concat(_constants.BELONGS_TO)) {
-        this.debug("Invalid relationship combination for belongsToThrough ".concat(relationshipCombination));
-        return Promise.resolve(null);
+        this.debug("Invalid relationship combination for belongsToThrough ".concat(data.relationshipCombination));
+        return this.constructor.findOne().where(false);
       }
 
       return data.targetModel.findOne().join(data.throughModel._table(), data.throughModel.attr(data.targetKey), '=', data.targetModel.attr(data.targetModel._pk())).join(this.constructor._table(), this.constructor.attr(data.throughKey), '=', data.throughModel.attr(data.throughModel._pk())).where(this.constructor.attr(this.constructor._pk()), this._id());
@@ -402,6 +389,22 @@ var DataModelBase = /*#__PURE__*/function () {
     key: "debug",
     value: function debug(message) {
       this.constructor.debug(message);
+    }
+  }, {
+    key: "_getValues",
+    value: function _getValues() {
+      var _this = this;
+
+      var values = {};
+      Object.keys(this.constructor.model_definition.attributes).map(function (key) {
+        values[key] = _this[key];
+      });
+      return values;
+    }
+  }, {
+    key: "toJSON",
+    value: function toJSON() {
+      return this._getValues();
     }
   }], [{
     key: "_pk",
@@ -541,6 +544,11 @@ var DataModelBase = /*#__PURE__*/function () {
     value: function truncate() {
       return this.query().truncate();
     }
+    /**
+     * Query this model's table by primary key and return promise that resolves to instance
+     * @return pending Promise
+     */
+
   }, {
     key: "findByPk",
     value: function findByPk(id) {
