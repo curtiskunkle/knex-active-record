@@ -135,7 +135,7 @@ var DataModelBase = /*#__PURE__*/function () {
                   break;
                 }
 
-                throw new _errors.InavlidInstanceError(this);
+                throw new _errors.InvalidInstanceError(this);
 
               case 26:
                 //get values for save

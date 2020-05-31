@@ -5,7 +5,7 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.InavlidInstanceError = exports.InvalidAttributeError = exports.MissingRequiredAttributeError = void 0;
+exports.InvalidModelError = exports.InvalidInstanceError = exports.InvalidAttributeError = exports.MissingRequiredAttributeError = void 0;
 
 var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
@@ -30,9 +30,9 @@ var MissingRequiredAttributeError = /*#__PURE__*/function (_Error) {
     var _this;
 
     (0, _classCallCheck2["default"])(this, MissingRequiredAttributeError);
-    _this.message = "".concat(modelInstance.constructor.name, " missing required attribute [").concat(attributeName, "]");
+    _this = _super.call(this, "".concat(modelInstance.constructor.name, " missing required attribute [").concat(attributeName, "]"));
     _this.name = "MissingRequiredAttributeError";
-    return (0, _possibleConstructorReturn2["default"])(_this);
+    return _this;
   }
 
   return MissingRequiredAttributeError;
@@ -49,9 +49,9 @@ var InvalidAttributeError = /*#__PURE__*/function (_Error2) {
     var _this2;
 
     (0, _classCallCheck2["default"])(this, InvalidAttributeError);
-    _this2.message = "".concat(modelInstance.constructor.name, " [").concat(attributeName, "] attribute failed validation");
+    _this2 = _super2.call(this, "".concat(modelInstance.constructor.name, " [").concat(attributeName, "] attribute failed validation"));
     _this2.name = "InvalidAttributeError";
-    return (0, _possibleConstructorReturn2["default"])(_this2);
+    return _this2;
   }
 
   return InvalidAttributeError;
@@ -59,21 +59,40 @@ var InvalidAttributeError = /*#__PURE__*/function (_Error2) {
 
 exports.InvalidAttributeError = InvalidAttributeError;
 
-var InavlidInstanceError = /*#__PURE__*/function (_Error3) {
-  (0, _inherits2["default"])(InavlidInstanceError, _Error3);
+var InvalidInstanceError = /*#__PURE__*/function (_Error3) {
+  (0, _inherits2["default"])(InvalidInstanceError, _Error3);
 
-  var _super3 = _createSuper(InavlidInstanceError);
+  var _super3 = _createSuper(InvalidInstanceError);
 
-  function InavlidInstanceError(modelInstance) {
+  function InvalidInstanceError(modelInstance) {
     var _this3;
 
-    (0, _classCallCheck2["default"])(this, InavlidInstanceError);
-    _this3.message = "".concat(modelInstance.constructor.name, " failed validation");
-    _this3.name = "InavlidInstanceError";
-    return (0, _possibleConstructorReturn2["default"])(_this3);
+    (0, _classCallCheck2["default"])(this, InvalidInstanceError);
+    _this3 = _super3.call(this, "".concat(modelInstance.constructor.name, " failed validation"));
+    _this3.name = "InvalidInstanceError";
+    return _this3;
   }
 
-  return InavlidInstanceError;
+  return InvalidInstanceError;
 }( /*#__PURE__*/(0, _wrapNativeSuper2["default"])(Error));
 
-exports.InavlidInstanceError = InavlidInstanceError;
+exports.InvalidInstanceError = InvalidInstanceError;
+
+var InvalidModelError = /*#__PURE__*/function (_Error4) {
+  (0, _inherits2["default"])(InvalidModelError, _Error4);
+
+  var _super4 = _createSuper(InvalidModelError);
+
+  function InvalidModelError(message) {
+    var _this4;
+
+    (0, _classCallCheck2["default"])(this, InvalidModelError);
+    _this4 = _super4.call(this, message);
+    _this4.name = "InvalidModelError";
+    return _this4;
+  }
+
+  return InvalidModelError;
+}( /*#__PURE__*/(0, _wrapNativeSuper2["default"])(Error));
+
+exports.InvalidModelError = InvalidModelError;

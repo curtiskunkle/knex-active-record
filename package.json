@@ -1,8 +1,8 @@
 {
   "name": "knex-active-record",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "build": "rm -rf build && babel src -d build",
     "test": "rm -rf build && rm -rf test-build && babel src -d build && babel tests -d test-build && mocha --recursive test-build/**/*.test.js",
@@ -13,9 +13,8 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "knex": "^0.20.13",
-    "mysql2": "^2.1.0"
+  "peerDependencies": {
+    "knex": "^0.20.13"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
@@ -26,5 +25,6 @@
     "@babel/preset-env": "^7.9.5",
     "@babel/runtime": "^7.9.2",
     "mocha": "^7.1.1"
-  }
+  },
+  "keywords": "knex,orm,active,record"
 }
