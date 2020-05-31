@@ -1,5 +1,5 @@
 {
-  "name": "knextest",
+  "name": "knex-active-record",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
