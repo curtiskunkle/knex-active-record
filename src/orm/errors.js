@@ -1,20 +1,27 @@
 export class MissingRequiredAttributeError extends Error {
 	constructor(modelInstance, attributeName) {
-	    this.message = `${modelInstance.constructor.name} missing required attribute [${attributeName}]`;
+		super(`${modelInstance.constructor.name} missing required attribute [${attributeName}]`);
 	    this.name = "MissingRequiredAttributeError";
 	}
 }
 
 export class InvalidAttributeError extends Error {
 	constructor(modelInstance, attributeName) {
-	    this.message = `${modelInstance.constructor.name} [${attributeName}] attribute failed validation`;
+		super(`${modelInstance.constructor.name} [${attributeName}] attribute failed validation`);
 	    this.name = "InvalidAttributeError";
 	}
 }
 
-export class InavlidInstanceError extends Error {
+export class InvalidInstanceError extends Error {
 	constructor(modelInstance) {
-	    this.message = `${modelInstance.constructor.name} failed validation`;
-	    this.name = "InavlidInstanceError";
+		super(`${modelInstance.constructor.name} failed validation`);
+	    this.name = "InvalidInstanceError";
+	}
+}
+
+export class InvalidModelError extends Error {
+	constructor(message) {
+		super(message);
+	    this.name = "InvalidModelError";
 	}
 }

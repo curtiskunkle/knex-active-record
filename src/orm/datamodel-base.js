@@ -1,6 +1,6 @@
 import { getPropFromObject, isObject } from '../helpers';
 import { BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH, BELONGS_TO_THROUGH, HAS_ONE_THROUGH } from './constants';
-import { MissingRequiredAttributeError, InvalidAttributeError, InavlidInstanceError } from './errors';
+import { MissingRequiredAttributeError, InvalidAttributeError, InvalidInstanceError } from './errors';
 
 /**
  * Base class that other data models will extend
@@ -61,7 +61,7 @@ export default class DataModelBase {
 
 		//assert instance level validation
 		if (!(await this.validate())) {
-			throw new InavlidInstanceError(this);
+			throw new InvalidInstanceError(this);
 		}
 
 		//get values for save

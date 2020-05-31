@@ -1,5 +1,6 @@
 import { isObject } from '../helpers';
 import { BELONGS_TO, HAS_MANY, HAS_ONE, HAS_MANY_THROUGH } from './constants';
+import { InvalidModelError } from './errors';
 
 export default class Store {
 
@@ -41,9 +42,18 @@ export default class Store {
   	}
 
 	registerModel (model) {
-		//@TODO validate model here
-		//make sure it extends model
-		//validate model_defintion
+		if (!this.isModel(model)) {
+			throw new InvalidModelError("Registered model not instance of store model: " + model);
+		}
+		if (!isObject(model.model_definition)) {
+			throw new InvalidModelError("model_definition must be of type object");
+		}
+		if (!model.model_definition.table) {
+			throw new InvalidModelError("model_definition.table required");
+		}
+		if (!isObject(model.model_definition.attributes) || !Object.keys(model.model_definition.attributes).length) {
+			throw new InvalidModelError("model_definition.attributes must be non empty object");
+		}
 		this.modelRegistry[model.name] = model;
 	}
 
@@ -126,7 +136,11 @@ export default class Store {
 	}
 
 	isModelInstance(modelInstance) {
-		return isObject(modelInstance) && modelInstance.constructor.prototype instanceof this.Model;
+		return isObject(modelInstance) && isModel(modelInstance.constructor);
+	}
+
+	isModel(model) {
+		return typeof model === 'function' && model.prototype instanceof this.Model;
 	}
 
 	transaction(callback) {
