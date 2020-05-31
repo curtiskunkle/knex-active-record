@@ -212,9 +212,9 @@ class CatToy extends Store.Model {
 }
 
 //get a pet owner
-let petowner = await PetOwner.findOne();
+let aPetOwner = await PetOwner.findOne();
 
 //fetch all of this pet owner's cats' cat toys
-let petOwnersCatToys = await PetOwner.catToys();
+let petOwnersCatToys = await aPetOwner.catToys();
 ```
 The supported through relationship types are `hasManyThrough`, `hasOneThrough`, and `belongsToThrough`.
